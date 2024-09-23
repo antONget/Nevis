@@ -2,7 +2,7 @@ from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup, default_state
+from aiogram.fsm.state import State, StatesGroup
 
 from config_data.config import Config, load_config
 import database.requests as rq
@@ -32,7 +32,7 @@ async def process_start_command(message: Message, state: FSMContext, bot: Bot) -
     :return:
     """
     logging.info(f"process_start_command {message.chat.id}")
-    await state.set_state(default_state)
+    await state.set_state(state=None)
     user = await rq.get_user_tg_id(tg_id=message.chat.id)
     if not user:
         await rq.add_user(tg_id=message.chat.id,
@@ -153,7 +153,7 @@ async def get_fullname(message: Message, state: FSMContext, bot: Bot) -> None:
     """
     logging.info(f'get_fullname {message.chat.id}')
     await rq.set_fullname(fullname=message.html_text, tg_id=message.chat.id)
-    await state.set_state(default_state)
+    await state.set_state(state=None)
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     await bot.delete_message(chat_id=message.chat.id, message_id=message.message_id-1)
     if await rq.check_registration(tg_id=message.chat.id):
