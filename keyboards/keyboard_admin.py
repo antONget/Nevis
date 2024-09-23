@@ -10,8 +10,10 @@ def keyboard_user_mode() -> ReplyKeyboardMarkup:
     :return:
     """
     button_1 = KeyboardButton(text=f'Мой профиль')
-    button_2 = KeyboardButton(text=f'Изготовить деталь')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2]])
+    button_2 = KeyboardButton(text=f'Создать отчет')
+    button_3 = KeyboardButton(text=f'Завершить отчет')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3]],
+                                   resize_keyboard=True)
     return keyboard
 #
 #

@@ -23,18 +23,13 @@ def keyboard_user_info(user_info: User) -> InlineKeyboardMarkup:
     else:
         job = user_info.job
     button_2 = InlineKeyboardButton(text=f'Должность: {job}', callback_data=f'job')
-    if user_info.power == 'default':
-        power = ''
-    else:
-        power = user_info.power
-    button_3 = InlineKeyboardButton(text=f'Мощность: {power}', callback_data=f'power')
     if user_info.district == 'default':
         district = ''
     else:
         district = user_info.district
     button_4 = InlineKeyboardButton(text=f'Участок: {district}', callback_data=f'district')
     button_5 = InlineKeyboardButton(text=f'Отменить ❌', callback_data=f'cancel_user_info')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3], [button_4], [button_5]],)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_4], [button_5]],)
     return keyboard
 
 
@@ -56,11 +51,10 @@ def keyboard_user_full(user_info: User) -> InlineKeyboardMarkup:
     logging.info(f"keyboard_user_full")
     button_1 = InlineKeyboardButton(text=f'ФИО: {user_info.fullname}', callback_data=f'fullname')
     button_2 = InlineKeyboardButton(text=f'Должность: {user_info.job}', callback_data=f'job')
-    button_3 = InlineKeyboardButton(text=f'Мощность: {user_info.power}', callback_data=f'power')
     button_4 = InlineKeyboardButton(text=f'Участок: {user_info.district}', callback_data=f'district')
     button_5 = InlineKeyboardButton(text=f'Зарегистрироваться', callback_data=f'registration_full')
     button_6 = InlineKeyboardButton(text=f'Отменить ❌', callback_data=f'cancel_user_info')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3], [button_4], [button_5], [button_6]],)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_4], [button_5], [button_6]],)
     return keyboard
 
 

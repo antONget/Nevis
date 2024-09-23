@@ -48,14 +48,19 @@ async def process_start_command(message: Message, state: FSMContext, bot: Bot) -
             job = ''
         else:
             job = user.job
-        if user.power == 'default':
-            power = ''
-        else:
-            power = user.power
         if user.district == 'default':
             district = ''
         else:
             district = user.district
+        if message.text == 'Мой профиль':
+            msg = await message.answer(text=f'<b>ID:</b> {user.tg_id}\n'
+                                            f'<b>ФИО:</b> {fullname}\n'
+                                            f'<b>Должность:</b> {job}\n'
+                                            f'<b>Участок:</b> {district}\n\n'
+                                            f'⚠️ Если хотите завершить работу с профилем, нажмите кнопку отменить',
+                                       reply_markup=kb.keyboard_user_info(user_info=user))
+            await state.update_data(msg=msg.message_id)
+            return
         try:
             data = await state.get_data()
             msg = data['msg']
@@ -63,7 +68,6 @@ async def process_start_command(message: Message, state: FSMContext, bot: Bot) -
                                         text=f'<b>ID:</b> {user.tg_id}\n'
                                              f'<b>ФИО:</b> {fullname}\n'
                                              f'<b>Должность:</b> {job}\n'
-                                             f'<b>Мощность:</b> {power}\n'
                                              f'<b>Участок:</b> {district}\n\n'
                                              f'⚠️ Если хотите завершить работу с профилем, нажмите кнопку отменить',
                                         message_id=msg,
@@ -72,7 +76,6 @@ async def process_start_command(message: Message, state: FSMContext, bot: Bot) -
             msg = await message.answer(text=f'<b>ID:</b> {user.tg_id}\n'
                                             f'<b>ФИО:</b> {fullname}\n'
                                             f'<b>Должность:</b> {job}\n'
-                                            f'<b>Мощность:</b> {power}\n'
                                             f'<b>Участок:</b> {district}\n\n'
                                             f'⚠️ Если хотите завершить работу с профилем, нажмите кнопку отменить',
                                        reply_markup=kb.keyboard_user_info(user_info=user))
@@ -98,10 +101,6 @@ async def process_registration(callback: CallbackQuery, state: FSMContext, bot: 
         job = ''
     else:
         job = user_info.job
-    if user_info.power == 'default':
-        power = ''
-    else:
-        power = user_info.power
     if user_info.district == 'default':
         district = ''
     else:
@@ -113,20 +112,19 @@ async def process_registration(callback: CallbackQuery, state: FSMContext, bot: 
                                     text=f'<b>ID:</b> {user_info.tg_id}\n'
                                          f'<b>ФИО:</b> {fullname}\n'
                                          f'<b>Должность:</b> {job}\n'
-                                         f'<b>Мощность:</b> {power}\n'
                                          f'<b>Участок:</b> {district}\n\n'
                                          f'⚠️ Если хотите завершить работу с профилем, нажмите кнопку отменить',
                                     message_id=msg,
                                     reply_markup=kb.keyboard_user_info(user_info=user_info))
     except:
-        msg = await callback.message.answer(text=f'<b>ID:</b> {user_info.tg_id}\n'
+        msg = await callback.message.edit_text(text=f'<b>ID:</b> {user_info.tg_id}\n'
                                                  f'<b>ФИО:</b> {fullname}\n'
                                                  f'<b>Должность:</b> {job}\n'
-                                                 f'<b>Мощность:</b> {power}\n'
                                                  f'<b>Участок:</b> {district}\n\n'
                                                  f'⚠️ Если хотите завершить работу с профилем, нажмите кнопку отменить',
                                             reply_markup=kb.keyboard_user_info(user_info=user_info))
         await state.update_data(msg=msg.message_id)
+    await callback.answer()
 
 
 @router.callback_query(F.data == 'fullname')
@@ -165,7 +163,6 @@ async def get_fullname(message: Message, state: FSMContext, bot: Bot) -> None:
 
 
 @router.callback_query(F.data == 'job')
-@router.callback_query(F.data == 'power')
 @router.callback_query(F.data == 'district')
 async def select_change_job(callback: CallbackQuery, state: FSMContext):
     """
@@ -187,10 +184,6 @@ async def select_change_job(callback: CallbackQuery, state: FSMContext):
         job = ''
     else:
         job = user_info.job
-    if user_info.power == 'default':
-        power = ''
-    else:
-        power = user_info.power
     if user_info.district == 'default':
         district = ''
     else:
@@ -198,7 +191,6 @@ async def select_change_job(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(text=f'<b>ID:</b> {user_info.tg_id}\n'
                                           f'<b>ФИО:</b> {fullname}\n'
                                           f'<b>Должность:</b> {job}\n'
-                                          f'<b>Мощность:</b> {power}\n'
                                           f'<b>Участок:</b> {district}\n\n'
                                           f'⚠️ Если хотите завершить работу с профилем, нажмите кнопку отменить',
                                      reply_markup=kb.keyboard_position(list_position=list_position))
@@ -220,8 +212,6 @@ async def select_position(callback: CallbackQuery, state: FSMContext, bot: Bot):
     position = callback.data.split('_')[1]
     if type_position == 'job':
         await rq.set_job(job=position, tg_id=callback.message.chat.id)
-    elif type_position == 'power':
-        await rq.set_power(power=position, tg_id=callback.message.chat.id)
     elif type_position == 'district':
         await rq.set_district(district=position, tg_id=callback.message.chat.id)
     await callback.answer()
@@ -236,7 +226,6 @@ async def cancel_action(callback: CallbackQuery, bot: Bot):
     """
     Отмена
     :param callback:
-    :param state:
     :param bot:
     :return:
     """
@@ -264,7 +253,6 @@ async def registration_full(message: Message, state: FSMContext, bot: Bot):
                                     text=f'<b>ID:</b> {user_info.tg_id}\n'
                                          f'<b>ФИО:</b> {user_info.fullname}\n'
                                          f'<b>Должность:</b> {user_info.job}\n'
-                                         f'<b>Мощность:</b> {user_info.power}\n'
                                          f'<b>Участок:</b> {user_info.district}\n\n'
                                          f'⚠️ Если хотите завершить работу с профилем, нажмите кнопку отменить',
                                     message_id=msg,
@@ -273,7 +261,6 @@ async def registration_full(message: Message, state: FSMContext, bot: Bot):
         await message.edit_text(text=f'<b>ID:</b> {user_info.tg_id}\n'
                                      f'<b>ФИО:</b> {user_info.fullname}\n'
                                      f'<b>Должность:</b> {user_info.job}\n'
-                                     f'<b>Мощность:</b> {user_info.power}\n'
                                      f'<b>Участок:</b> {user_info.district}\n\n'
                                      f'⚠️ Если хотите завершить работу с профилем, нажмите кнопку отменить',
                                 reply_markup=kb.keyboard_user_full(user_info=user_info))
@@ -295,7 +282,6 @@ async def registration_finish(callback: CallbackQuery, bot: Bot):
            f'<b>ID:</b> {user_info.tg_id}\n' \
            f'<b>ФИО:</b> {user_info.fullname}\n' \
            f'<b>Должность:</b> {user_info.job}\n' \
-           f'<b>Мощность:</b> {user_info.power}\n' \
            f'<b>Участок:</b> {user_info.district}\n\n' \
            f'Примите или откажите в регистрации.'
     admin_list = config.tg_bot.admin_ids.split(',')

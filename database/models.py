@@ -20,44 +20,30 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(20))
     fullname: Mapped[str] = mapped_column(String(20), default='default')
     job: Mapped[str] = mapped_column(String(20), default='default')
-    power: Mapped[str] = mapped_column(String(20), default='default')
     district: Mapped[str] = mapped_column(String(20), default='default')
 
 
-class Resource(Base):
-    __tablename__ = 'resources'
+class Report(Base):
+    __tablename__ = 'reports'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    token_resource: Mapped[str] = mapped_column(String(20), default="None")
-    link_resource: Mapped[str] = mapped_column(String(200))
-    name_resource: Mapped[str] = mapped_column(String(200))
-
-
-class Order(Base):
-    __tablename__ = 'orders'
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    status: Mapped[str] = mapped_column(String(10))
-    data_create: Mapped[str] = mapped_column(String(40))
-    data_public: Mapped[str] = mapped_column(String(40), default='None')
-    tg_client: Mapped[int] = mapped_column(Integer)
-    link_resource: Mapped[str] = mapped_column(String(200))
-    tg_executor: Mapped[int] = mapped_column(Integer, default='0')
-    about_me: Mapped[str] = mapped_column(String)
-    type_public: Mapped[str] = mapped_column(String)
-    type_content: Mapped[str] = mapped_column(String)
-    content: Mapped[str] = mapped_column(String)
-    caption: Mapped[str] = mapped_column(String)
-
-
-class Proposal(Base):
-    __tablename__ = 'proposals'
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    status: Mapped[str] = mapped_column(String)
-    tg_id: Mapped[int] = mapped_column(Integer)
-    type_proposal: Mapped[str] = mapped_column(String)
-    proposal: Mapped[str] = mapped_column(String)
+    photo_id: Mapped[str] = mapped_column(String(200))
+    number_order: Mapped[str] = mapped_column(String(20))
+    part_designation: Mapped[str] = mapped_column(String(200))
+    part_title: Mapped[str] = mapped_column(String(200))
+    data_create: Mapped[str] = mapped_column(String(200))
+    title_action: Mapped[str] = mapped_column(String(200), default='none')
+    description_action: Mapped[str] = mapped_column(String(200), default='none')
+    title_machine: Mapped[str] = mapped_column(String(200), default='none')
+    machine_time: Mapped[str] = mapped_column(String(200), default='none')
+    count_part: Mapped[str] = mapped_column(String(200), default='none')
+    is_all_installed: Mapped[str] = mapped_column(String(200), default='none')
+    is_defect: Mapped[str] = mapped_column(String(200), default='none')
+    count_defect: Mapped[str] = mapped_column(String(200), default='none')
+    reason_defect: Mapped[str] = mapped_column(String(200), default='none')
+    count_machine: Mapped[str] = mapped_column(String(200), default='none')
+    data_complete: Mapped[str] = mapped_column(String(200), default='none')
+    note_report:  Mapped[str] = mapped_column(String(200), default='none')
 
 
 async def async_main():

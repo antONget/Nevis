@@ -3,8 +3,8 @@ from aiogram.types import FSInputFile
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import ErrorEvent
-
-from handlers import handler_user, handler_admin, other_handlers
+from aiogram.fsm.storage.redis import RedisStorage
+from handlers import handler_user, handler_admin, other_handlers, handler_user_report, handler_user_change
 from config_data.config import Config, load_config
 from database.models import async_main
 
@@ -21,8 +21,8 @@ async def main():
     # Конфигурируем логирование
     logging.basicConfig(
         level=logging.INFO,
-        filename="py_log.log",
-        filemode='w',
+        # filename="py_log.log",
+        # filemode='w',
         format='%(filename)s:%(lineno)d #%(levelname)-8s '
                '[%(asctime)s] - %(name)s - %(message)s')
 
@@ -34,10 +34,11 @@ async def main():
 
     # Инициализируем бот и диспетчер
     bot = Bot(token=config.tg_bot.token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp = Dispatcher()
+    storage = RedisStorage.from_url('redis://127.0.0.1:6379/3')
+    dp = Dispatcher(storage=storage)
 
     # Регистрируем router в диспетчере
-    dp.include_router(handler_user.router)
+    dp.include_routers(handler_user.router, handler_user_report.router, handler_user_change.router)
     dp.include_router(handler_admin.router)
     dp.include_router(other_handlers.router)
 

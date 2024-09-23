@@ -8,6 +8,9 @@ job = gsheet.worksheet("Должность")
 power = gsheet.worksheet("Мощность")
 district = gsheet.worksheet("Участок")
 report = gsheet.worksheet("Отчет")
+action = gsheet.worksheet("Название операции")
+operation = gsheet.worksheet("Описание операции")
+title_machine = gsheet.worksheet("Название станка")
 
 
 async def append_row(data: list) -> None:
@@ -23,6 +26,12 @@ async def get_list_all_rows(data: str) -> list:
         sheet = power
     elif data == 'district':
         sheet = district
+    elif data == 'action':
+        sheet = action
+    elif data == 'operation':
+        sheet = operation
+    elif data == 'title_machine':
+        sheet = title_machine
     values = sheet.get_all_values()
     list_product = []
     for item in values[1:]:

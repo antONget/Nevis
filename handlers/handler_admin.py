@@ -18,12 +18,12 @@ router = Router()
 user_dict = {}
 
 
-@router.callback_query(F.data == 'moderation_yes_843554518')
-@router.callback_query(F.data.startwith('moderation_'))
+@router.callback_query(lambda callback: 'moderation' in callback.data)
 async def moderation_user(callback: CallbackQuery, bot: Bot):
     """
     Модерация регистрации пользователя
     :param callback:
+    :param bot:
     :return:
     """
     logging.info(f'moderation_user: {callback.message.chat.id}')
@@ -31,9 +31,17 @@ async def moderation_user(callback: CallbackQuery, bot: Bot):
     if answer == 'yes':
         user_info = await rq.get_user_tg_id(tg_id=int(callback.data.split('_')[2]))
         await callback.answer(text=f'Пользователь @{user_info.username} авторизован в боте')
+        user = await rq.get_user_tg_id(tg_id=int(callback.data.split('_')[2]))
         await bot.send_message(chat_id=callback.data.split('_')[2],
-                               text=f'Вы авторизованы в боте',
+                               text=f'<b>ID:</b> {user.tg_id}\n'
+                                    f'<b>ФИО:</b> {user.fullname}\n'
+                                    f'<b>Должность:</b> {user.job}\n'
+                                    f'<b>Участок:</b> {user.district}\n\n'
+                                    f'Выберите раздел',
                                reply_markup=kb.keyboard_user_mode())
+        await bot.delete_message(chat_id=callback.message.chat.id,
+                                 message_id=callback.message.message_id)
+        await callback.answer(text='Пользователь успешно авторизован в боте')
     await callback.answer()
 
 
