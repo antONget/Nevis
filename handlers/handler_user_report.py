@@ -318,7 +318,8 @@ async def process_get_part_designation(message: Message, state: FSMContext) -> N
                                     report_data=['number_order', 'part_designation', 'part_title', 'data_create'])
     await message.answer(text=f'{text_user}{text_report}'
                               f'Отчет на изготовление детали успешно открыт, для завершения выберите пункт'
-                              ' меню "Завершить отчет"')
+                              ' меню "Завершить отчет"',
+                         reply_markup=kb.keyboard_report_start())
     await state.set_state(state=None)
 
 
