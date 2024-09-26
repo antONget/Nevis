@@ -190,7 +190,8 @@ async def confirm_qr(callback: CallbackQuery, state: FSMContext, bot: Bot):
                                        f'<b>Время начала изготовления:</b> {datetime.today().strftime("%H:%M:%S")}',
                                   reply_markup=kb.keyboard_report_start())
     await callback.answer(text='Отчет на изготовление детали успешно открыт, для завершения выберите пункт'
-                               ' меню "Завершить отчет"', show_alert=True)
+                               ' меню "Завершить отчет" в меню ниже. Если вы ее не видите разверните меню нажав'
+                               ' на иконку с 4-мя кружками', show_alert=True)
 
 
 @router.callback_query(F.data == 'qr_recognize')
@@ -366,10 +367,10 @@ async def process_get_qr(message: Message, state: FSMContext) -> None:
                                       f" Создайте отчет с этим номера заказа или введите номер отчета вручную",
                                  reply_markup=kb.keyboard_not_report())
             return
-        elif report.status == rq.ReportStatus.complied:
-            await message.answer(text=f"Отчет с номер заказа {list_qr[0]} уже завершен.",
-                                 reply_markup=kb.keyboard_not_report())
-            return
+        # elif report.status == rq.ReportStatus.complied:
+        #     await message.answer(text=f"Отчет с номер заказа {list_qr[0]} уже завершен.",
+        #                          reply_markup=kb.keyboard_not_report())
+        #     return
         await state.update_data(report_id=report.id)
         try:
             os.remove(file_path)
@@ -664,9 +665,9 @@ async def is_defect(callback: CallbackQuery, state: FSMContext):
         await rq.set_report(report_id=report_id,
                             data={"is_defect": 'Да'})
     else:
-        await callback.answer(text='⚠️Информационное сообщение⚠️\n\n'
-                                   'Если нет брака пропускаем пункты с их количеством и причиной,'
-                                   ' их можно изменить позже при проверке отчета', show_alert=True)
+        # await callback.answer(text='⚠️Информационное сообщение⚠️\n\n'
+        #                            'Если нет брака пропускаем пункты с их количеством и причиной,'
+        #                            ' их можно изменить позже при проверке отчета', show_alert=True)
         await rq.set_report(report_id=report_id,
                             data={"is_defect": 'Нет'})
         await rq.set_report(report_id=report_id,

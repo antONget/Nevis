@@ -27,6 +27,7 @@ class Change(StatesGroup):
     count_part = State()
     count_defect = State()
     reason_defect = State()
+    machine_time = State()
 
 
 async def user_text(tg_id: int) -> str:
@@ -496,8 +497,6 @@ async def change_title_machine(callback: CallbackQuery, state: FSMContext, bot: 
     :return:
     """
     logging.info(f"change_title_action {callback.message.chat.id}")
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
@@ -610,6 +609,42 @@ async def process_get_count_defect(message: Message, state: FSMContext, bot: Bot
     await check_report_change(message=message, state=state, bot=bot)
 
 
+@router.callback_query(F.data == 'change_report-machine_time')
+async def select_change_machine_time(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+    Изменение машинного времени
+    :param callback:
+    :param state:
+    :return:
+    """
+    logging.info(f"select_change_machine_time {callback.message.chat.id}")
+    await callback.message.answer(text=f'Укажите машинное время')
+    await state.set_state(Change.machine_time)
+    await callback.answer()
+
+
+@router.message(F.text, StateFilter(Change.machine_time))
+async def process_get_machine_time(message: Message, state: FSMContext, bot: Bot) -> None:
+    """
+    Получаем количество машинного времени
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f"process_get_machine_time {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
+    data = await state.get_data()
+    report_id = data['report_id']
+    await rq.set_report(report_id=report_id,
+                        data={"machine_time": message.text})
+    await state.set_state(state=None)
+    await check_report_change(message=message, state=state, bot=bot)
+
+
 @router.message(F.text == 'Подтвердить отчет')
 async def confirm_report(message: Message, state: FSMContext, bot: Bot):
     """
@@ -620,10 +655,11 @@ async def confirm_report(message: Message, state: FSMContext, bot: Bot):
     :return:
     """
     logging.info('confirm_report')
+    data = await state.get_data()
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)
     await bot.delete_message(chat_id=message.chat.id,
-                             message_id=message.message_id-1)
+                             message_id=data['check_message'])
     data = await state.get_data()
     report_id = data['report_id']
     info_order = await rq.get_report(report_id=report_id)
@@ -642,32 +678,34 @@ async def confirm_report(message: Message, state: FSMContext, bot: Bot):
                   info_order.note_report,
                   info_order.data_create,
                   info_order.data_complete]
-    text = "Админу отправляем отчет?"
+    # text = "Админу отправляем отчет?"
     await append_row(data=list_order)
     await message.answer(text='Отчет отправлен в гугл таблицу',
                          reply_markup=kb.keyboard_report_start())
     await rq.set_report(report_id=report_id,
                         data={"status": rq.ReportStatus.complied})
-    for admin in config.tg_bot.admin_ids.split(','):
-        try:
-            await bot.send_message(chat_id=admin,
-                                   text=text)
-        except:
-            pass
+    # for admin in config.tg_bot.admin_ids.split(','):
+    #     try:
+    #         await bot.send_message(chat_id=admin,
+    #                                text=text)
+    #     except:
+    #         pass
 
 
 @router.message(F.text == 'Отменить отчет')
-async def cancel_report(message: Message, bot: Bot):
+async def cancel_report(message: Message, bot: Bot, state: FSMContext):
     """
     Отмена отправки отчета
     :param message:
     :param bot:
+    :param state:
     :return:
     """
     logging.info('cancel_report')
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)
+    data = await state.get_data()
     await bot.delete_message(chat_id=message.chat.id,
-                             message_id=message.message_id-1)
+                             message_id=data['check_message'])
     await message.answer(text='Добавление отчета отменено',
                          reply_markup=kb.keyboard_report_start())

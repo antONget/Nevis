@@ -150,7 +150,7 @@ def keyboard_is_defect() -> InlineKeyboardMarkup:
 def keyboard_count_machine() -> InlineKeyboardMarkup:
     logging.info("keyboard_count_machine")
     button_1 = InlineKeyboardButton(text='1 станок', callback_data=f'count_machine_1')
-    button_2 = InlineKeyboardButton(text='2 станок', callback_data=f'count_machine_2')
+    button_2 = InlineKeyboardButton(text='2 станка', callback_data=f'count_machine_2')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2]],)
     return keyboard
 
