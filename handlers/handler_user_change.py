@@ -622,6 +622,8 @@ async def confirm_report(message: Message, state: FSMContext, bot: Bot):
     logging.info('confirm_report')
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     info_order = await rq.get_report(report_id=report_id)
@@ -665,5 +667,7 @@ async def cancel_report(message: Message, bot: Bot):
     logging.info('cancel_report')
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     await message.answer(text='Добавление отчета отменено',
                          reply_markup=kb.keyboard_report_start())
