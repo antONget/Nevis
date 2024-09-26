@@ -2,15 +2,15 @@ import asyncio
 import time
 
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InputMediaPhoto
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup, default_state
+from aiogram.fsm.state import State, StatesGroup
 from services.googlesheets import append_row
 from config_data.config import Config, load_config
 import database.requests as rq
 import keyboards.keyboard_report as kb
-
+from services.googlesheets import get_list_all_rows
 import logging
 
 
@@ -21,7 +21,7 @@ config: Config = load_config()
 class Change(StatesGroup):
     number_order = State()
     part_designation = State()
-    part_title =State()
+    part_title = State()
     data_create = State()
     data_complete = State()
     count_part = State()
@@ -29,8 +29,13 @@ class Change(StatesGroup):
     reason_defect = State()
 
 
-
-async def user_text(tg_id: int):
+async def user_text(tg_id: int) -> str:
+    """
+    Функция для формирования сведений об исполнителе
+    :param tg_id:
+    :return:
+    """
+    logging.info("user_text")
     user = await rq.get_user_tg_id(tg_id=tg_id)
     text = f'<b>ID:</b> {user.tg_id}\n' \
            f'<b>ФИО:</b> {user.fullname}\n' \
@@ -39,7 +44,14 @@ async def user_text(tg_id: int):
     return text
 
 
-async def report_text(report_id, report_data: list):
+async def report_text(report_id, report_data: list) -> str:
+    """
+    Функция для формирования текста отчета
+    :param report_id:
+    :param report_data:
+    :return:
+    """
+    logging.info(f"report_text")
     report_info = await rq.get_report(report_id=report_id)
     text = ''
     for data in report_data:
@@ -79,11 +91,12 @@ async def report_text(report_id, report_data: list):
     return text
 
 
-async def check_report_change(message: Message, state: FSMContext):
+async def check_report_change(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Проверить отчет
-    :param callback:
+    Функция для отображения отчета для проверки и правки
+    :param message:
     :param state:
+    :param bot:
     :return:
     """
     logging.info(f'check_report {message.chat.id}')
@@ -107,47 +120,58 @@ async def check_report_change(message: Message, state: FSMContext):
                                                  'note_report',
                                                  'data_create',
                                                  'data_complete'])
-    await message.answer_photo(photo=report_info.photo_id,
-                               caption=f'{text_user}{text_report}',
-                               reply_markup=kb.keyboard_change_report(info_report=report_info))
+    try:
+        await bot.edit_message_caption(
+            caption=f'{text_user}{text_report}',
+            chat_id=message.chat.id,
+            message_id=data['check_message'],
+            reply_markup=kb.keyboard_change_report(info_report=report_info))
+    except:
+        await bot.edit_message_caption(
+            caption=f'{text_user}{text_report}.',
+            chat_id=message.chat.id,
+            message_id=data['check_message'],
+            reply_markup=kb.keyboard_change_report(info_report=report_info))
 
 
 @router.callback_query(F.data == 'change_report-number_order')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_number_order(callback: CallbackQuery, state: FSMContext) -> None:
     """
     Изменение номера заказа
     :param callback:
     :param state:
-    :param bot:
     :return:
     """
-    text_user = await user_text(tg_id=callback.message.chat.id)
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_number_order {callback.message.chat.id}")
     await callback.message.answer(text=f'Пришлите номер заказа')
     await state.set_state(Change.number_order)
     await callback.answer()
 
 
 @router.message(F.text, StateFilter(Change.number_order))
-async def process_get_number_order(message: Message, state: FSMContext) -> None:
+async def process_get_number_order(message: Message, state: FSMContext, bot: Bot) -> None:
     """
     Получаем номер заказа
     :param message:
     :param state:
+    :param bot:
     :return:
     """
     logging.info(f"process_get_number_order {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"number_order": message.text})
     await state.set_state(state=None)
-    await check_report_change(message=message, state=state)
+    await check_report_change(message=message, state=state, bot=bot)
 
 
 @router.callback_query(F.data == 'change_report-title_action')
-async def qr_hand_input(callback: CallbackQuery, bot: Bot):
+async def select_change_title_action(callback: CallbackQuery, bot: Bot, state: FSMContext) -> None:
     """
     Изменение названия операции
     :param callback:
@@ -155,30 +179,38 @@ async def qr_hand_input(callback: CallbackQuery, bot: Bot):
     :param bot:
     :return:
     """
+    logging.info(f"select_change_title_action {callback.message.chat.id}")
     list_title_action = await get_list_all_rows(data='action')
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
-    await callback.message.answer(text=f'Выберите название операции:',
-                                  reply_markup=kb.keyboard_select_report(list_report=list_title_action,
-                                                                         callback_report='change_action'))
+    data = await state.get_data()
+    await bot.edit_message_caption(
+        caption=f'Выберите название операции:',
+        chat_id=callback.message.chat.id,
+        message_id=data['check_message'],
+        reply_markup=kb.keyboard_select_report(list_report=list_title_action,
+                                               callback_report='change_action'))
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith('change_action'))
 async def change_title_action(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    """
+    Обработка изменения названия операции
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
     logging.info(f"change_title_action {callback.message.chat.id}")
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
-                        data={"title_action": callback.data.split('_')[1]})
-    await check_report_change(message=callback.message, state=state)
+                        data={"title_action": callback.data.split('_')[-1]})
+    await check_report_change(message=callback.message, state=state, bot=bot)
     await callback.answer()
 
 
 @router.callback_query(F.data == 'change_report-part_designation')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_part_designation(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
     Изменение обозначения детали
     :param callback:
@@ -186,203 +218,216 @@ async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    text_user = await user_text(tg_id=callback.message.chat.id)
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_part_designation {callback.message.chat.id}")
     await callback.message.answer(text=f'Пришлите обозначение детали')
     await state.set_state(Change.part_designation)
     await callback.answer()
 
 
 @router.message(F.text, StateFilter(Change.part_designation))
-async def process_get_number_order(message: Message, state: FSMContext) -> None:
+async def process_get_part_designation(message: Message, state: FSMContext, bot: Bot) -> None:
     """
     Получаем номер заказа
     :param message:
     :param state:
+    :param bot:
     :return:
     """
-    logging.info(f"process_get_number_order {message.chat.id}")
+    logging.info(f"process_get_part_designation {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"part_designation": message.text})
     await state.set_state(state=None)
-    await check_report_change(message=message, state=state)
+    await check_report_change(message=message, state=state, bot=bot)
 
 
 @router.callback_query(F.data == 'change_report-part_title')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_part_title(callback: CallbackQuery, state: FSMContext):
     """
     Изменение наименования детали
     :param callback:
     :param state:
-    :param bot:
     :return:
     """
-    text_user = await user_text(tg_id=callback.message.chat.id)
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_part_title {callback.message.chat.id}")
     await callback.message.answer(text=f'Пришлите наименование детали')
     await state.set_state(Change.part_title)
     await callback.answer()
 
 
 @router.message(F.text, StateFilter(Change.part_title))
-async def process_get_number_order(message: Message, state: FSMContext) -> None:
+async def process_get_part_title(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Получаем номер заказа
+    Получаем наименование детали
     :param message:
     :param state:
+    :param bot:
     :return:
     """
-    logging.info(f"process_get_number_order {message.chat.id}")
+    logging.info(f"process_get_part_title {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"part_title": message.text})
     await state.set_state(state=None)
-    await check_report_change(message=message, state=state)
+    await check_report_change(message=message, state=state, bot=bot)
 
 
 @router.callback_query(F.data == 'change_report-data_create')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_data_create(callback: CallbackQuery, state: FSMContext) -> None:
     """
     Изменение времени начала работы
     :param callback:
     :param state:
-    :param bot:
     :return:
     """
-    text_user = await user_text(tg_id=callback.message.chat.id)
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_data_create {callback.message.chat.id}")
     await callback.message.answer(text=f'Пришлите время начала работы')
     await state.set_state(Change.data_create)
     await callback.answer()
 
 
 @router.message(F.text, StateFilter(Change.data_create))
-async def process_get_number_order(message: Message, state: FSMContext) -> None:
+async def process_get_data_create(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Получаем номер заказа
+    Получаем время начала работы
     :param message:
     :param state:
+    :param bot:
     :return:
     """
-    logging.info(f"process_get_number_order {message.chat.id}")
+    logging.info(f"process_get_data_create {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"data_create": message.text})
     await state.set_state(state=None)
-    await check_report_change(message=message, state=state)
+    await check_report_change(message=message, state=state, bot=bot)
 
 
 @router.callback_query(F.data == 'change_report-data_complete')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_data_complete(callback: CallbackQuery, state: FSMContext) -> None:
     """
     Изменение времени начала работы
     :param callback:
     :param state:
-    :param bot:
     :return:
     """
-    text_user = await user_text(tg_id=callback.message.chat.id)
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_data_complete {callback.message.chat.id}")
     await callback.message.answer(text=f'Пришлите время окончания работы')
     await state.set_state(Change.data_complete)
     await callback.answer()
 
 
 @router.message(F.text, StateFilter(Change.data_complete))
-async def process_get_number_order(message: Message, state: FSMContext) -> None:
+async def process_get_data_complete(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Получаем номер заказа
+    Получаем время окончания работы
     :param message:
     :param state:
+    :param bot:
     :return:
     """
-    logging.info(f"process_get_number_order {message.chat.id}")
+    logging.info(f"process_get_data_complete {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"data_complete": message.text})
     await state.set_state(state=None)
-    await check_report_change(message=message, state=state)
+    await check_report_change(message=message, state=state, bot=bot)
 
 
 @router.callback_query(F.data == 'change_report-count_part')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_count_part(callback: CallbackQuery, state: FSMContext) -> None:
     """
     Изменение времени начала работы
     :param callback:
     :param state:
-    :param bot:
     :return:
     """
-    text_user = await user_text(tg_id=callback.message.chat.id)
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_count_part {callback.message.chat.id}")
     await callback.message.answer(text=f'Количество деталей')
     await state.set_state(Change.count_part)
     await callback.answer()
 
 
 @router.message(F.text, StateFilter(Change.count_part))
-async def process_get_number_order(message: Message, state: FSMContext) -> None:
+async def process_get_count_part(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Получаем номер заказа
+    Получаем количество деталей
     :param message:
     :param state:
+    :param bot:
     :return:
     """
-    logging.info(f"process_get_number_order {message.chat.id}")
+    logging.info(f"process_get_count_part {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"count_part": message.text})
     await state.set_state(state=None)
-    await check_report_change(message=message, state=state)
+    await check_report_change(message=message, state=state, bot=bot)
 
 
 @router.callback_query(F.data == 'change_report-reason_defect')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_reason_defect(callback: CallbackQuery, state: FSMContext) -> None:
     """
     Изменение времени начала работы
     :param callback:
     :param state:
-    :param bot:
     :return:
     """
-    text_user = await user_text(tg_id=callback.message.chat.id)
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_reason_defect {callback.message.chat.id}")
     await callback.message.answer(text=f'Причина брака')
     await state.set_state(Change.reason_defect)
     await callback.answer()
 
 
 @router.message(F.text, StateFilter(Change.reason_defect))
-async def process_get_number_order(message: Message, state: FSMContext) -> None:
+async def process_get_reason_defect(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Получаем номер заказа
+    Получаем причину брака
     :param message:
     :param state:
+    :param bot:
     :return:
     """
-    logging.info(f"process_get_number_order {message.chat.id}")
+    logging.info(f"process_get_reason_defect {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"reason_defect": message.text})
     await state.set_state(state=None)
-    await check_report_change(message=message, state=state)
+    await check_report_change(message=message, state=state, bot=bot)
 
 
 @router.callback_query(F.data == 'change_report-description_action')
-async def qr_hand_input(callback: CallbackQuery, bot: Bot):
+async def select_change_description_action(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
     Изменение описания операции
     :param callback:
@@ -390,30 +435,59 @@ async def qr_hand_input(callback: CallbackQuery, bot: Bot):
     :param bot:
     :return:
     """
+    logging.info(f"select_change_description_action {callback.message.chat.id}")
     list_title_action = await get_list_all_rows(data='operation')
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
-    await callback.message.answer(text=f'Выберите описание операции:',
-                                  reply_markup=kb.keyboard_select_report(list_report=list_title_action,
-                                                                         callback_report='change_operation'))
+    data = await state.get_data()
+    await bot.edit_message_caption(
+        caption=f'Выберите описание операции:',
+        chat_id=callback.message.chat.id,
+        message_id=data['check_message'],
+        reply_markup=kb.keyboard_select_report(list_report=list_title_action,
+                                               callback_report='change_operation'))
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith('change_operation'))
-async def change_title_action(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    logging.info(f"change_title_action {callback.message.chat.id}")
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+async def change_operation(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+    """
+    Изменение описания операции
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f"change_operation {callback.message.chat.id}")
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
-                        data={"description_action": callback.data.split('_')[1]})
-    await check_report_change(message=callback.message, state=state)
+                        data={"description_action": callback.data.split('_')[-1]})
+    await check_report_change(message=callback.message, state=state, bot=bot)
     await callback.answer()
 
 
 @router.callback_query(F.data == 'change_report-title_machine')
-async def qr_hand_input(callback: CallbackQuery, bot: Bot):
+async def select_change_title_machine(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+    """
+    Выбор названия станка
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f"select_change_title_machine {callback.message.chat.id}")
+    list_title_action = await get_list_all_rows(data='title_machine')
+    data = await state.get_data()
+    await bot.edit_message_caption(
+        caption=f'Выберите название станка:',
+        chat_id=callback.message.chat.id,
+        message_id=data['check_message'],
+        reply_markup=kb.keyboard_select_report(list_report=list_title_action,
+                                               callback_report='change_title_machine'))
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith('change_title_machine'))
+async def change_title_machine(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
     Изменение названия станка
     :param callback:
@@ -421,53 +495,41 @@ async def qr_hand_input(callback: CallbackQuery, bot: Bot):
     :param bot:
     :return:
     """
-    list_title_action = await get_list_all_rows(data='title_machine')
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
-    await callback.message.answer(text=f'Выберите название станка:',
-                                  reply_markup=kb.keyboard_select_report(list_report=list_title_action,
-                                                                         callback_report='change_operation'))
-    await callback.answer()
-
-
-@router.callback_query(F.data.startswith('change_operation'))
-async def change_title_action(callback: CallbackQuery, state: FSMContext, bot: Bot):
     logging.info(f"change_title_action {callback.message.chat.id}")
     await bot.delete_message(chat_id=callback.message.chat.id,
                              message_id=callback.message.message_id)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
-                        data={"title_machine": callback.data.split('_')[1]})
-    await check_report_change(message=callback.message, state=state)
+                        data={"title_machine": callback.data.split('_')[-1]})
+    await check_report_change(message=callback.message, state=state, bot=bot)
     await callback.answer()
 
 
 @router.callback_query(F.data == 'change_report-is_all_installed')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_is_all_installed(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Изменение названия станка
+    Изменение значение установки всех деталей
     :param callback:
     :param state:
     :param bot:
     :return:
     """
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_is_all_installed {callback.message.chat.id}")
     data = await state.get_data()
     report_id = data['report_id']
     report = await rq.get_report(report_id=report_id)
-    input = 'Да'
+    input_ = 'Да'
     if report.is_all_installed == 'Да':
-        input = 'Heт'
+        input_ = 'Heт'
     await rq.set_report(report_id=report_id,
-                        data={"is_all_installed": input})
-    await check_report_change(message=callback.message, state=state)
+                        data={"is_all_installed": input_})
+    await check_report_change(message=callback.message, state=state, bot=bot)
     await callback.answer()
 
 
 @router.callback_query(F.data == 'change_report-is_defect')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_is_defect(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
     Изменение наличия брака
     :param callback:
@@ -475,24 +537,22 @@ async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_is_defect {callback.message.chat.id}")
     data = await state.get_data()
     report_id = data['report_id']
     report = await rq.get_report(report_id=report_id)
-    print(report.is_defect)
     if report.is_defect == 'Да':
         is_defect = 'Heт'
     else:
         is_defect = 'Да'
     await rq.set_report(report_id=report_id,
                         data={"is_defect": is_defect})
-    await check_report_change(message=callback.message, state=state)
+    await check_report_change(message=callback.message, state=state, bot=bot)
     await callback.answer()
 
 
 @router.callback_query(F.data == 'change_report-count_machine')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_count_machine(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
     Изменение количества станков
     :param callback:
@@ -500,8 +560,7 @@ async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_count_machine {callback.message.chat.id}")
     data = await state.get_data()
     report_id = data['report_id']
     report = await rq.get_report(report_id=report_id)
@@ -511,46 +570,55 @@ async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
         count_machine = '1'
     await rq.set_report(report_id=report_id,
                         data={"count_machine": count_machine})
-    await check_report_change(message=callback.message, state=state)
+    await check_report_change(message=callback.message, state=state, bot=bot)
     await callback.answer()
 
 
 @router.callback_query(F.data == 'change_report-count_defect')
-async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def select_change_count_defect(callback: CallbackQuery, state: FSMContext) -> None:
     """
-    Изменение времени начала работы
+    Изменение количества брака
     :param callback:
     :param state:
-    :param bot:
     :return:
     """
-    text_user = await user_text(tg_id=callback.message.chat.id)
-    await bot.delete_message(chat_id=callback.message.chat.id,
-                             message_id=callback.message.message_id)
+    logging.info(f"select_change_count_defect {callback.message.chat.id}")
     await callback.message.answer(text=f'Количество брака')
     await state.set_state(Change.count_defect)
     await callback.answer()
 
 
 @router.message(F.text, StateFilter(Change.count_defect))
-async def process_get_number_order(message: Message, state: FSMContext) -> None:
+async def process_get_count_defect(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Получаем номер заказа
+    Получаем количество дефектов
     :param message:
     :param state:
+    :param bot:
     :return:
     """
-    logging.info(f"process_get_number_order {message.chat.id}")
+    logging.info(f"process_get_count_defect {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"count_defect": message.text})
     await state.set_state(state=None)
-    await check_report_change(message=message, state=state)
+    await check_report_change(message=message, state=state, bot=bot)
 
 
 @router.message(F.text == 'Подтвердить отчет')
 async def confirm_report(message: Message, state: FSMContext, bot: Bot):
+    """
+    Подтверждение отчета
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
     logging.info('confirm_report')
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)
@@ -576,6 +644,8 @@ async def confirm_report(message: Message, state: FSMContext, bot: Bot):
     await append_row(data=list_order)
     await message.answer(text='Отчет отправлен в гугл таблицу',
                          reply_markup=kb.keyboard_report_start())
+    await rq.set_report(report_id=report_id,
+                        data={"status": rq.ReportStatus.complied})
     for admin in config.tg_bot.admin_ids.split(','):
         try:
             await bot.send_message(chat_id=admin,
@@ -585,7 +655,13 @@ async def confirm_report(message: Message, state: FSMContext, bot: Bot):
 
 
 @router.message(F.text == 'Отменить отчет')
-async def cancel_report(message: Message, state: FSMContext, bot: Bot):
+async def cancel_report(message: Message, bot: Bot):
+    """
+    Отмена отправки отчета
+    :param message:
+    :param bot:
+    :return:
+    """
     logging.info('cancel_report')
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)

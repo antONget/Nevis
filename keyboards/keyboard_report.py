@@ -7,6 +7,12 @@ keyboard_report_text_button = {}
 
 
 def keyboard_not_recognize() -> InlineKeyboardMarkup:
+    """
+    Клавиатура при нераспознании QR:
+     [Ввести вручную] - для ввода данных вручную.
+     [Распознать QR] - повтороной попытки распознать QR.
+    :return:
+    """
     logging.info("keyboard_not_recognize")
     button_1 = InlineKeyboardButton(text='Ввести вручную', callback_data=f'qr_hand_input')
     button_2 = InlineKeyboardButton(text='Распознать QR', callback_data=f'qr_recognize')
@@ -15,6 +21,13 @@ def keyboard_not_recognize() -> InlineKeyboardMarkup:
 
 
 def keyboard_confirm_recognize() -> InlineKeyboardMarkup:
+    """
+    Клавиатура при успешном распознании QR:
+     [Подтвердить данные] - данные QR подтверждаются, отчет создается
+     [Ввести вручную] - ввод данных в ручном режиме.
+     [Распознать QR] - повторная попытки распознать QR.
+    :return:
+    """
     logging.info("keyboard_not_recognize")
     button_3 = InlineKeyboardButton(text='Подтвердить данные', callback_data=f'qr_confirm')
     button_1 = InlineKeyboardButton(text='Ввести вручную', callback_data=f'qr_hand_input')
@@ -28,29 +41,66 @@ def keyboard_report_start() -> ReplyKeyboardMarkup:
     button_1 = KeyboardButton(text=f'Мой профиль')
     button_2 = KeyboardButton(text=f'Создать отчет')
     button_3 = KeyboardButton(text=f'Завершить отчет')
-    button_4 = KeyboardButton(text='🔄 Заполнить отчет заново')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3], [button_4]],
+    # button_4 = KeyboardButton(text='🔄 Заполнить отчет заново')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3]],
                                    resize_keyboard=True)
     return keyboard
 
 
-def keyboard_report_start_2() -> ReplyKeyboardMarkup:
-    logging.info("keyboard_report_start")
-    button_1 = KeyboardButton(text=f'Мой профиль')
-    button_2 = KeyboardButton(text=f'Создать отчет')
-    button_3 = KeyboardButton(text=f'Завершить отчет')
-    button_4 = KeyboardButton(text='Заполнить отчет заново 🔄')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3], [button_4]],
-                                   resize_keyboard=True)
-    return keyboard
+# def keyboard_report_start_2() -> ReplyKeyboardMarkup:
+#     logging.info("keyboard_report_start")
+#     button_1 = KeyboardButton(text=f'Мой профиль')
+#     button_2 = KeyboardButton(text=f'Создать отчет')
+#     button_3 = KeyboardButton(text=f'Завершить отчет')
+#     # button_4 = KeyboardButton(text='Заполнить отчет заново 🔄')
+#     keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3]],
+#                                    resize_keyboard=True)
+#     return keyboard
 
 
-def keyboard_again() -> ReplyKeyboardMarkup:
+def keyboard_again_start() -> ReplyKeyboardMarkup:
     logging.info("keyboard_again")
     button_1 = KeyboardButton(text='Заполнить отчет заново 🔄',)
     keyboard = ReplyKeyboardMarkup(keyboard=[[button_1]],
                                    resize_keyboard=True)
     return keyboard
+
+
+def keyboard_again_finish() -> ReplyKeyboardMarkup:
+    logging.info("keyboard_again")
+    button_1 = KeyboardButton(text='Зaполнить отчет зaново 🔄',)
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1]],
+                                   resize_keyboard=True)
+    return keyboard
+
+
+def keyboard_not_report() -> InlineKeyboardMarkup:
+    """
+    Клавиатура при начале заверении заказа и отсутствии номера заказа для его заверения
+    [Создать отчет]
+    [Ввести вручную]
+    :return:
+    """
+    logging.info("keyboard_not_report")
+    button_1 = InlineKeyboardButton(text='Создать отчет', callback_data=f'open_report')
+    button_2 = InlineKeyboardButton(text='Ввести вручную', callback_data=f'input_number_report')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2]],)
+    return keyboard
+
+
+def keyboard_not_recognize_finish() -> InlineKeyboardMarkup:
+    """
+    Клавиатура при нераспознании QR при завершении заказ:
+     [Ввести вручную] - для ввода данных вручную.
+     [Распознать QR] - повторной попытки распознать QR.
+    :return:
+    """
+    logging.info("keyboard_not_recognize")
+    button_1 = InlineKeyboardButton(text='Ввести вручную', callback_data=f'input_number_report')
+    button_2 = InlineKeyboardButton(text='Распознать QR', callback_data=f'qr_recognize_finish')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]],)
+    return keyboard
+
 
 
 def keyboard_action(list_title_action: list) -> InlineKeyboardMarkup:

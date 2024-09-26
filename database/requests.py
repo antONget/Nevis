@@ -124,6 +124,14 @@ async def check_registration(tg_id: int) -> bool:
             return False
 
 
+@dataclass
+class ReportStatus:
+    start = "start"
+    create = "create"
+    process = "process"
+    complied = "complied"
+
+
 """ REPORT """
 
 
@@ -154,7 +162,7 @@ async def get_report(report_id: int) -> Report:
         return await session.scalar(select(Report).where(Report.id == report_id))
 
 
-async def get_report_number(number: int) -> Report:
+async def get_report_number(number: str) -> Report:
     """
     Получаем отчет по его id
     :param number:
@@ -211,4 +219,6 @@ async def set_report(report_id: int, data: dict) -> None:
             report.data_complete = data['data_complete']
         elif 'part_designation' in data.keys():
             report.part_designation = data['part_designation']
+        elif 'status' in data.keys():
+            report.status = data['status']
         await session.commit()

@@ -1,8 +1,8 @@
-from sqlalchemy import BigInteger, ForeignKey, String, Integer, Float
-from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
+from sqlalchemy import String, Integer
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+from dataclasses import dataclass
 
-from typing import List
 
 engine = create_async_engine(url="sqlite+aiosqlite:///database/db.sqlite3", echo=False)
 async_session = async_sessionmaker(engine)
@@ -44,6 +44,7 @@ class Report(Base):
     count_machine: Mapped[str] = mapped_column(String(200), default='none')
     data_complete: Mapped[str] = mapped_column(String(200), default='none')
     note_report:  Mapped[str] = mapped_column(String(200), default='none')
+    status: Mapped[str] = mapped_column(String(200), default='start')
 
 
 async def async_main():

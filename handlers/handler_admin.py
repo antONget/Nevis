@@ -30,7 +30,7 @@ async def moderation_user(callback: CallbackQuery, bot: Bot):
     answer = callback.data.split('_')[1]
     if answer == 'yes':
         user_info = await rq.get_user_tg_id(tg_id=int(callback.data.split('_')[2]))
-        await callback.answer(text=f'Пользователь @{user_info.username} авторизован в боте')
+        await callback.answer(text=f'Пользователь @{user_info.username} авторизован в боте', show_alert=True)
         user = await rq.get_user_tg_id(tg_id=int(callback.data.split('_')[2]))
         await bot.send_message(chat_id=callback.data.split('_')[2],
                                text=f'<b>ID:</b> {user.tg_id}\n'
