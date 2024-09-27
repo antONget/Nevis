@@ -29,8 +29,8 @@ async def moderation_user(callback: CallbackQuery, bot: Bot):
     logging.info(f'moderation_user: {callback.message.chat.id}')
     answer = callback.data.split('_')[1]
     if answer == 'yes':
-        user_info = await rq.get_user_tg_id(tg_id=int(callback.data.split('_')[2]))
-        await callback.answer(text=f'Пользователь @{user_info.username} авторизован в боте', show_alert=True)
+        # user_info = await rq.get_user_tg_id(tg_id=int(callback.data.split('_')[2]))
+        # await callback.answer(text=f'Пользователь @{user_info.username} авторизован в боте', show_alert=True)
         user = await rq.get_user_tg_id(tg_id=int(callback.data.split('_')[2]))
         await bot.send_message(chat_id=callback.data.split('_')[2],
                                text=f'<b>ID:</b> {user.tg_id}\n'
@@ -41,7 +41,7 @@ async def moderation_user(callback: CallbackQuery, bot: Bot):
                                reply_markup=kb.keyboard_user_mode())
         await bot.delete_message(chat_id=callback.message.chat.id,
                                  message_id=callback.message.message_id)
-        await callback.answer(text='Пользователь успешно авторизован в боте')
+        await callback.message.answer(text='Пользователь успешно авторизован в боте')
     await callback.answer()
 
 
