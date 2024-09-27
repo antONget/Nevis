@@ -173,6 +173,28 @@ async def get_report_number(number: str) -> Report:
         return await session.scalar(select(Report).where(Report.number_order == number))
 
 
+async def get_reports_number(number: str) -> Report:
+    """
+    Получаем отчет по номеру заказа
+    :param number:
+    :return:
+    """
+    logging.info(f'get_reports_number')
+    async with async_session() as session:
+        return await session.scalars(select(Report).where(Report.number_order == number))
+
+
+async def get_report_designation_part(designation_part: str) -> Report:
+    """
+    Получаем отчет по обозначению детали
+    :param designation_part:
+    :return:
+    """
+    logging.info(f'get_report_designation_part')
+    async with async_session() as session:
+        return await session.scalar(select(Report).where(Report.number_order == designation_part))
+
+
 async def set_report(report_id: int, data: dict) -> None:
     """
     Обновляем отчет по его id

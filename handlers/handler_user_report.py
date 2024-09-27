@@ -228,6 +228,21 @@ async def qr_hand_input(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await callback.answer()
 
 
+@router.message(F.text == '🏠 Главное меню')
+async def process_main_menu(message: Message, state: FSMContext) -> None:
+    """
+    Главное меню
+    :param message:
+    :param state:
+    :return:
+    """
+    logging.info(f"process_main_menu {message.chat.id}")
+    text_user = await user_text(tg_id=message.chat.id)
+    await message.answer(text=f'{text_user}',
+                         reply_markup=kb.keyboard_report_start())
+    await state.set_state(Report.photo)
+
+
 @router.message(F.text == 'Заполнить отчет заново 🔄')
 async def process_again_input(message: Message, state: FSMContext) -> None:
     """
@@ -367,6 +382,8 @@ async def process_get_qr(message: Message, state: FSMContext) -> None:
                                       f" Создайте отчет с этим номера заказа или введите номер отчета вручную",
                                  reply_markup=kb.keyboard_not_report())
             return
+        list_reports = [report.part_title for report in (await rq.get_reports_number(number=list_qr[0]))]
+        print(list_reports)
         # elif report.status == rq.ReportStatus.complied:
         #     await message.answer(text=f"Отчет с номер заказа {list_qr[0]} уже завершен.",
         #                          reply_markup=kb.keyboard_not_report())
@@ -456,7 +473,23 @@ async def get_input_number_report(message: Message, state: FSMContext):
                                   f" Создайте отчет с этим номера заказа или введите номер отчета вручную",
                              reply_markup=kb.keyboard_not_report())
         return
+    list_reports = [report.part_designation for report in (await rq.get_reports_number(number=message.text))]
+    await message.answer(text="Выберите отчет для его завершения",
+                         reply_markup=kb.keyboard_select_report(list_report=list_reports, callback_report='report'))
     await state.set_state(state=None)
+
+
+@router.callback_query(F.data.startswith('report'))
+async def process_select_report(callback: CallbackQuery, state: FSMContext):
+    """
+    Выбор отчета для его завершения
+    :param callback:
+    :param state:
+    :return:
+    """
+    logging.info(f"process_select_report")
+    designation_part = callback.data.split('_')[-1]
+    report = await rq.get_report_designation_part(designation_part=designation_part)
     list_title_action = await get_list_all_rows(data='action')
     report_id = report.id
     await state.update_data(report_id=report_id)
@@ -465,17 +498,18 @@ async def get_input_number_report(message: Message, state: FSMContext):
                         data={"data_complete": data_complete})
 
     time.sleep(0.1)
-    text_user = await user_text(tg_id=message.chat.id)
+    text_user = await user_text(tg_id=callback.message.chat.id)
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
                                                  'part_title',
                                                  'data_create',
                                                  'data_complete'])
-    await message.answer(text=f'{text_user}{text_report}'
-                              f'Выберите название операции:',
-                         reply_markup=kb.keyboard_select_report(list_report=list_title_action,
-                                                                callback_report='action'))
+    await callback.message.edit_text(text=f'{text_user}{text_report}'
+                                          f'Выберите название операции:',
+                                     reply_markup=kb.keyboard_select_report(list_report=list_title_action,
+                                                                            callback_report='action'))
+    await callback.answer()
 
 
 @router.callback_query(F.data.startswith('action'))
@@ -819,8 +853,47 @@ async def count_machine(callback: CallbackQuery, state: FSMContext):
                                                  'data_create',
                                                  'data_complete'])
     await callback.message.edit_text(text=f'{text_user}{text_report}'
-                                          f'Добавьте примечание')
+                                          f'Добавьте примечание',
+                                     reply_markup=kb.keyboard_skip())
     await state.set_state(Report.note_report)
+    await callback.answer()
+
+
+@router.callback_query(F.data == 'skip')
+async def skip_note_report(callback: CallbackQuery, state: FSMContext):
+    """
+    Пропуск добавления примечания
+    :param callback:
+    :param state:
+    :return:
+    """
+    logging.info(f"skip_note_report {callback.message.chat.id}")
+    data = await state.get_data()
+    report_id = data['report_id']
+    await rq.set_report(report_id=report_id,
+                        data={"note_report": 'None'})
+    await state.set_state(state=None)
+    text_user = await user_text(tg_id=callback.message.chat.id)
+    text_report = await report_text(report_id=report_id,
+                                    report_data=['number_order',
+                                                 'part_designation',
+                                                 'title_action',
+                                                 'part_title',
+                                                 'description_action',
+                                                 'title_machine',
+                                                 'machine_time',
+                                                 'count_part',
+                                                 'is_all_installed',
+                                                 'is_defect',
+                                                 'count_defect',
+                                                 'reason_defect',
+                                                 'note_report',
+                                                 'data_create',
+                                                 'data_complete'])
+    await callback.message.answer(text=f'Отчет заполнен\n\n'
+                                       f'{text_user}{text_report}\n\n'
+                                       f'Проверьте и измените если необходимо',
+                                  reply_markup=kb.keyboard_check_report())
     await callback.answer()
 
 
@@ -867,6 +940,7 @@ async def check_report(callback: CallbackQuery, state: FSMContext, bot: Bot):
     Проверить отчет
     :param callback:
     :param state:
+    :param bot:
     :return:
     """
     logging.info(f'check_report {callback.message.chat.id}')

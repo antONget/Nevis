@@ -60,16 +60,18 @@ def keyboard_report_start() -> ReplyKeyboardMarkup:
 
 def keyboard_again_start() -> ReplyKeyboardMarkup:
     logging.info("keyboard_again")
-    button_1 = KeyboardButton(text='Заполнить отчет заново 🔄',)
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1]],
+    button_1 = KeyboardButton(text='Заполнить отчет заново 🔄')
+    button_2 = KeyboardButton(text='🏠 Главное меню')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2]],
                                    resize_keyboard=True)
     return keyboard
 
 
 def keyboard_again_finish() -> ReplyKeyboardMarkup:
     logging.info("keyboard_again")
-    button_1 = KeyboardButton(text='Зaполнить отчет зaново 🔄',)
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1]],
+    button_1 = KeyboardButton(text='Зaполнить отчет зaново 🔄')
+    button_2 = KeyboardButton(text='🏠 Главное меню')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2]],
                                    resize_keyboard=True)
     return keyboard
 
@@ -219,4 +221,11 @@ def keyboard_confirm_report() -> ReplyKeyboardMarkup:
     button_2 = KeyboardButton(text=f'Отменить отчет')
     keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2]],
                                    resize_keyboard=True)
+    return keyboard
+
+
+def keyboard_skip() -> InlineKeyboardMarkup:
+    logging.info("keyboard_report_start")
+    button_1 = InlineKeyboardButton(text=f'Подтвердить отчет', callback_data='skip')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
     return keyboard
