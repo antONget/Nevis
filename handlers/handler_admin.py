@@ -39,8 +39,8 @@ async def moderation_user(callback: CallbackQuery, bot: Bot):
                                     f'<b>Участок:</b> {user.district}\n\n'
                                     f'Выберите раздел',
                                reply_markup=kb.keyboard_user_mode())
-        await bot.delete_message(chat_id=callback.message.chat.id,
-                                 message_id=callback.message.message_id)
+        # await bot.delete_message(chat_id=callback.message.chat.id,
+        #                          message_id=callback.message.message_id)
         await callback.message.answer(text='Пользователь успешно авторизован в боте')
     await callback.answer()
 
