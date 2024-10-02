@@ -184,6 +184,18 @@ async def get_reports_number(number: str) -> Report:
         return await session.scalars(select(Report).where(Report.number_order == number))
 
 
+async def get_reports_creator_status(creator: int, status: str) -> Report:
+    """
+    Получаем отчеты пользователя с заданным статусом
+    :param creator:
+    :param status:
+    :return:
+    """
+    logging.info(f'get_reports_creator_status')
+    async with async_session() as session:
+        return await session.scalars(select(Report).where(Report.creator == creator, Report.status == status))
+
+
 async def get_report_designation_part(designation_part: str) -> Report:
     """
     Получаем отчет по обозначению детали
@@ -241,6 +253,8 @@ async def set_report(report_id: int, data: dict) -> None:
             report.data_complete = data['data_complete']
         elif 'part_designation' in data.keys():
             report.part_designation = data['part_designation']
+        elif 'average_time' in data.keys():
+            report.average_time = data['average_time']
         elif 'status' in data.keys():
             report.status = data['status']
         await session.commit()

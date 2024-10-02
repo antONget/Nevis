@@ -104,7 +104,6 @@ def keyboard_not_recognize_finish() -> InlineKeyboardMarkup:
     return keyboard
 
 
-
 def keyboard_action(list_title_action: list) -> InlineKeyboardMarkup:
     logging.info(f"keyboard_action")
     kb_builder = InlineKeyboardBuilder()
@@ -126,6 +125,20 @@ def keyboard_select_report(list_report: list, callback_report: str) -> InlineKey
     for action in list_report:
         text = action
         button = f'{callback_report}_{action}'
+        buttons.append(InlineKeyboardButton(
+            text=text,
+            callback_data=button))
+    kb_builder.row(*buttons, width=1)
+    return kb_builder.as_markup()
+
+
+def keyboard_select_report_complete(list_report: list, callback_report: str) -> InlineKeyboardMarkup:
+    logging.info(f"keyboard_select_report")
+    kb_builder = InlineKeyboardBuilder()
+    buttons = []
+    for report in list_report:
+        text = report.title_machine
+        button = f'{callback_report}_{report.id}'
         buttons.append(InlineKeyboardButton(
             text=text,
             callback_data=button))
@@ -205,13 +218,12 @@ def keyboard_change_report(info_report: Report) -> InlineKeyboardMarkup:
                                                          [button_4], [button_5], [button_6],
                                                          [button_7], [button_8], [button_9],
                                                          [button_10], [button_11], [button_12],
-                                                         [button_13], [button_14], [button_15]],)
+                                                         [button_13]],)
     else:
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3],
                                                          [button_4], [button_5], [button_6],
                                                          [button_7], [button_8], [button_9],
-                                                         [button_12], [button_13], [button_14],
-                                                         [button_15]],)
+                                                         [button_12], [button_13],],)
     return keyboard
 
 

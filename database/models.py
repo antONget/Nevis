@@ -27,6 +27,7 @@ class Report(Base):
     __tablename__ = 'reports'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    creator = mapped_column(Integer)
     photo_id: Mapped[str] = mapped_column(String(200))
     number_order: Mapped[str] = mapped_column(String(20))
     part_designation: Mapped[str] = mapped_column(String(200))
@@ -36,6 +37,7 @@ class Report(Base):
     description_action: Mapped[str] = mapped_column(String(200), default='none')
     title_machine: Mapped[str] = mapped_column(String(200), default='none')
     machine_time: Mapped[str] = mapped_column(String(200), default='none')
+    average_time: Mapped[str] = mapped_column(String(200), default='none')
     count_part: Mapped[str] = mapped_column(String(200), default='none')
     is_all_installed: Mapped[str] = mapped_column(String(200), default='none')
     is_defect: Mapped[str] = mapped_column(String(200), default='none')
