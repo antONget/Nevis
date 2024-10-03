@@ -70,6 +70,8 @@ async def report_text(report_id, report_data: list) -> str:
             text += f'<b>Название станка:</b> {report_info.title_machine}\n'
         if data == 'machine_time':
             text += f'<b>Машинное время:</b> {report_info.machine_time}\n'
+        if data == 'average_time':
+            text += f'<b>Среднее время на деталь:</b> {report_info.average_time} мин.\n'
         if data == 'count_part':
             text += f'<b>Количество деталей:</b> {report_info.count_part}\n'
         if data == 'is_all_installed':
@@ -79,7 +81,7 @@ async def report_text(report_id, report_data: list) -> str:
         if data == 'count_defect':
             text += f'<b>Количество брака:</b> {report_info.count_defect}\n'
         if data == 'reason_defect':
-            text += f'<b>Причина брака:</b> {report_info.reason_defect}\n'
+            text += f'<b>Причина брака:</b> {report_info.reason_defect if report_info.reason_defect != "none" else "Отсутствует"}\n'
         if data == 'count_machine':
             text += f'<b>Работа на 1-м или 2-х станках:</b> {report_info.count_machine}\n'
         if data == 'data_create':
@@ -112,6 +114,7 @@ async def check_report_change(message: Message, state: FSMContext, bot: Bot) -> 
                                                  'part_title',
                                                  'description_action',
                                                  'title_machine',
+                                                 'average_time',
                                                  'machine_time',
                                                  'count_part',
                                                  'is_all_installed',
@@ -379,6 +382,9 @@ async def process_get_count_part(message: Message, state: FSMContext, bot: Bot) 
     :return:
     """
     logging.info(f"process_get_count_part {message.chat.id}")
+    if not message.text.isdigit() or int(message.text) <= 0:
+        await message.answer(text='Количество деталей должно быть целым числом, указанным цифрами')
+        return
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)
     await bot.delete_message(chat_id=message.chat.id,
@@ -597,6 +603,16 @@ async def process_get_count_defect(message: Message, state: FSMContext, bot: Bot
     :return:
     """
     logging.info(f"process_get_count_defect {message.chat.id}")
+    if not message.text.isdigit() or int(message.text) <= 0:
+        await message.answer(text='Количество деталей должно быть целым числом, указанным цифрами')
+        return
+    data = await state.get_data()
+    report_id = data['report_id']
+    info_report = await rq.get_report(report_id=report_id)
+    if int(info_report.count_part) < int(message.text):
+        await message.answer(text='Количество деталей брака не может превышать количество изготовленных деталей.'
+                                  ' Повторите ввод')
+        return
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)
     await bot.delete_message(chat_id=message.chat.id,
@@ -633,6 +649,9 @@ async def process_get_machine_time(message: Message, state: FSMContext, bot: Bot
     :return:
     """
     logging.info(f"process_get_machine_time {message.chat.id}")
+    if not message.text.isdigit() or int(message.text) <= 0:
+        await message.answer(text='Время должно быть целым положительным числом')
+        return
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)
     await bot.delete_message(chat_id=message.chat.id,

@@ -202,7 +202,7 @@ def keyboard_change_report(info_report: Report) -> InlineKeyboardMarkup:
 
     button_10 = InlineKeyboardButton(text=f'Кол-во брака: {info_report.count_defect}',
                                      callback_data=f'change_report-count_defect')
-    button_11 = InlineKeyboardButton(text=f'Причина брака: {info_report.reason_defect}',
+    button_11 = InlineKeyboardButton(text=f'Причина брака: {info_report.reason_defect if info_report.reason_defect != "none" else "Отсутствует"}',
                                      callback_data=f'change_report-reason_defect')
     button_12 = InlineKeyboardButton(text=f'Работа на 1 или 2-х станках?: {info_report.count_machine}',
                                      callback_data=f'change_report-count_machine')
@@ -214,16 +214,13 @@ def keyboard_change_report(info_report: Report) -> InlineKeyboardMarkup:
     button_15 = InlineKeyboardButton(text=f'Окончание работы: {info_report.data_complete}',
                                      callback_data=f'change_report-data_complete')
     if info_report.is_defect == 'Да':
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3],
-                                                         [button_4], [button_5], [button_6],
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_5],
                                                          [button_7], [button_8], [button_9],
-                                                         [button_10], [button_11], [button_12],
-                                                         [button_13]],)
+                                                         [button_10], [button_11], [button_12], [button_13]],)
     else:
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3],
-                                                         [button_4], [button_5], [button_6],
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_5],
                                                          [button_7], [button_8], [button_9],
-                                                         [button_12], [button_13],],)
+                                                         [button_12], [button_13]],)
     return keyboard
 
 
@@ -237,7 +234,7 @@ def keyboard_confirm_report() -> ReplyKeyboardMarkup:
 
 
 def keyboard_skip() -> InlineKeyboardMarkup:
-    logging.info("keyboard_report_start")
-    button_1 = InlineKeyboardButton(text=f'Подтвердить отчет', callback_data='skip')
+    logging.info("keyboard_skip")
+    button_1 = InlineKeyboardButton(text=f'Пропустить', callback_data='skip')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
     return keyboard
