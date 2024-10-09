@@ -400,7 +400,7 @@ async def process_select_description_operation(callback: CallbackQuery, state: F
     title_machine = callback.data.split('_')[-1]
     await state.update_data(title_machine=title_machine)
     list_title_action = await get_list_all_rows(data='action')
-    await callback.message.edit_text(text=f'Выберите название операции:',
+    await callback.message.answer(text=f'Выберите название операции:',
                                      reply_markup=kb.keyboard_select_report(list_report=list_title_action,
                                                                             callback_report='action'))
     await callback.answer()
