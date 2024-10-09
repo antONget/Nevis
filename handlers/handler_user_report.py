@@ -1153,8 +1153,8 @@ async def get_note_report(message: Message, state: FSMContext, bot: Bot):
     :return:
     """
     logging.info(f'get_note_report {message.chat.id}')
-    await bot.delete_message(chat_id=message.chat.id,
-                             message_id=message.message_id-1)
+    # await bot.delete_message(chat_id=message.chat.id,
+    #                          message_id=message.message_id-1)
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
