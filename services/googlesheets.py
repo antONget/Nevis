@@ -5,7 +5,7 @@ import logging
 gp = gspread.service_account(filename='services/nevis.json')
 bot_data = gp.open('bot_данные')
 bot_report = gp.open('bot_отчеты')
-reports = bot_data.worksheet("Лист 1")
+reports = bot_report.worksheet("Лист1")
 units = bot_data.worksheet("подразделения")
 users = bot_data.worksheet("пользователи")
 machines = bot_data.worksheet("оборудование")
