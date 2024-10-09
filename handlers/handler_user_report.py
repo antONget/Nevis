@@ -267,8 +267,8 @@ async def process_again_input(message: Message, state: FSMContext, bot: Bot) -> 
     :return:
     """
     logging.info(f"process_again_input {message.chat.id}")
-    await bot.delete_message(chat_id=message.chat.id,
-                             message_id=message.message_id - 1)
+    # await bot.delete_message(chat_id=message.chat.id,
+    #                          message_id=message.message_id - 1)
     text_user = await user_text(tg_id=message.chat.id)
     await message.answer(text=f'{text_user}'
                               f'Для начала отчета отправьте фотографию чертежа детали.'
@@ -673,10 +673,13 @@ async def process_select_report(callback: CallbackQuery, state: FSMContext):
                                                  'title_machine',
                                                  'data_create',
                                                  'data_complete'])
+    # await callback.message.edit_text(text=f'{text_user}{text_report}'
+    #                                       f'Выберите описание операции:',
+    #                                  reply_markup=kb.keyboard_select_report(list_report=list_operation,
+    #                                                                         callback_report='operation'))
     await callback.message.edit_text(text=f'{text_user}{text_report}'
                                           f'Выберите описание операции:',
-                                     reply_markup=kb.keyboard_select_report(list_report=list_operation,
-                                                                            callback_report='operation'))
+                                     reply_markup=kb.keyboard_operation())
 
     await callback.answer()
 
