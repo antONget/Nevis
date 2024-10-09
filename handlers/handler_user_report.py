@@ -25,6 +25,7 @@ class Report(StatesGroup):
     QR_2 = State()
     number_order = State()
     part_designation = State()
+    number_MSK = State()
     part_title = State()
     count_part = State()
     count_defect = State()
@@ -51,6 +52,8 @@ async def report_text(report_id, report_data: list):
             text += f'<b>Номер заказа:</b> {report_info.number_order}\n'
         if data == 'part_designation':
             text += f'<b>Обозначение детали:</b> {report_info.part_designation}\n'
+        if data == 'number_MSK':
+            text += f'<b>Номер детали по MSK:</b> {report_info.number_MSK}\n'
         if data == 'part_title':
             text += f'<b>Наименование детали:</b> {report_info.part_title}\n'
         if data == 'title_action':
@@ -362,6 +365,20 @@ async def process_get_part_designation(message: Message, state: FSMContext) -> N
     #                           ' меню "Завершить отчет"',
     #                      reply_markup=kb.keyboard_report_start())
     # await state.set_state(state=None)
+    await message.answer(text=f'Укажите номер операции по МСК')
+    await state.set_state(Report.number_MSK)
+
+
+@router.message(F.text, StateFilter(Report.number_MSK))
+async def process_get_number_MSK(message: Message, state: FSMContext) -> None:
+    """
+    Получаем номер детели по MSK
+    :param message:
+    :param state:
+    :return:
+    """
+    logging.info(f"process_get_number_MSK {message.chat.id}")
+    await state.update_data(number_MSK=message.text)
     list_title_machine = await get_list_all_rows(data='title_machine')
     await message.answer(text=f'Выберите наименование станка:',
                          reply_markup=kb.keyboard_select_report(list_report=list_title_machine,
@@ -404,6 +421,7 @@ async def process_select_title_action(callback: CallbackQuery, state: FSMContext
                  "creator": callback.message.chat.id,
                  "number_order": data["number_order"],
                  "part_designation": data["part_designation"],
+                 "number_MSK": data["number_MSK"],
                  "part_title": data["part_title"],
                  "data_create": datetime.today().strftime('%H/%M/%S/%d/%m/%Y'),
                  "title_machine": data["title_machine"],
@@ -416,6 +434,7 @@ async def process_select_title_action(callback: CallbackQuery, state: FSMContext
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'part_title',
                                                  'title_machine',
                                                  'title_action',
@@ -516,6 +535,8 @@ async def process_get_complete_part(message: Message, state: FSMContext, bot: Bo
 #         except Exception as e:
 #             logging.error(f'Произошла ошибка: {e}')
 #         return
+
+
 @router.callback_query(F.data.startswith('comletereport'))
 async def process_select_report(callback: CallbackQuery, state: FSMContext):
     """
@@ -646,6 +667,7 @@ async def process_select_report(callback: CallbackQuery, state: FSMContext):
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'title_machine',
@@ -667,7 +689,7 @@ async def process_select_description_operation(callback: CallbackQuery, state: F
     :param state:
     :return:
     """
-    list_title_machine = await get_list_all_rows(data='title_machine')
+    # list_title_machine = await get_list_all_rows(data='title_machine')
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
@@ -716,6 +738,7 @@ async def process_select_description_operation(callback: CallbackQuery, state: F
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -762,6 +785,7 @@ async def process_get_count_part(message: Message, state: FSMContext) -> None:
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -797,6 +821,7 @@ async def is_all_installed(callback: CallbackQuery, state: FSMContext):
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -841,6 +866,7 @@ async def is_defect(callback: CallbackQuery, state: FSMContext):
         text_report = await report_text(report_id=report_id,
                                         report_data=['number_order',
                                                      'part_designation',
+                                                     'number_MSK',
                                                      'title_action',
                                                      'part_title',
                                                      'description_action',
@@ -860,6 +886,7 @@ async def is_defect(callback: CallbackQuery, state: FSMContext):
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -901,6 +928,7 @@ async def get_count_defect(message: Message, state: FSMContext):
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -939,6 +967,7 @@ async def get_reason_defect(message: Message, state: FSMContext):
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -975,6 +1004,7 @@ async def count_machine(callback: CallbackQuery, state: FSMContext):
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -1014,6 +1044,7 @@ async def get_time_machine(message: Message, state: FSMContext):
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -1133,6 +1164,7 @@ async def get_note_report(message: Message, state: FSMContext, bot: Bot):
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -1173,6 +1205,7 @@ async def check_report(callback: CallbackQuery, state: FSMContext, bot: Bot):
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',

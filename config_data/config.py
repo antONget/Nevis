@@ -6,6 +6,7 @@ from environs import Env
 class TgBot:
     token: str
     admin_ids: str
+    bitrix: str
     support_id: int
     support_username: str
 
@@ -21,6 +22,7 @@ def load_config(path: str = None) -> Config:
     return Config(tg_bot=TgBot(token=env('BOT_TOKEN'),
                                admin_ids=env('ADMIN_IDS'),
                                support_id=env('SUPPORT_ID'),
+                               bitrix=env('BITRIX'),
                                support_username=env('SUPPORT_USERNAME')
                                )
                   )

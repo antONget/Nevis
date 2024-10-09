@@ -2,38 +2,53 @@ import gspread
 import logging
 # TEST
 
-gp = gspread.service_account(filename='services/kingdom.json')
-gsheet = gp.open('Исходные данные')
-job = gsheet.worksheet("Должность")
-power = gsheet.worksheet("Мощность")
-district = gsheet.worksheet("Участок")
-report = gsheet.worksheet("Отчет")
-action = gsheet.worksheet("Название операции")
-operation = gsheet.worksheet("Описание операции")
-title_machine = gsheet.worksheet("Название станка")
+gp = gspread.service_account(filename='services/nevis.json')
+bot_data = gp.open('bot_данные')
+bot_report = gp.open('bot_отчеты')
+reports = bot_data.worksheet("Лист 1")
+units = bot_data.worksheet("подразделения")
+users = bot_data.worksheet("пользователи")
+machines = bot_data.worksheet("оборудование")
 
 
-async def append_row(data: list) -> None:
-    logging.info(f'append_row')
-    report.append_row(data)
+async def append_report(data: list) -> None:
+    """
+    Добавление отчета в гугл таблицу
+    :param data:
+    :return:
+    """
+    logging.info(f'append_report')
+    reports.append_row(data)
+
+
+async def append_user(data: list) -> None:
+    """
+    Добавление пользователя в гугл таблицу
+    :param data:
+    :return:
+    """
+    logging.info(f'append_user')
+    users.append_row(data)
 
 
 async def get_list_all_rows(data: str) -> list:
     logging.info(f'get_list_all_rows')
-    if data == 'job':
-        sheet = job
-    elif data == 'power':
-        sheet = power
-    elif data == 'district':
-        sheet = district
-    elif data == 'action':
-        sheet = action
-    elif data == 'operation':
-        sheet = operation
-    elif data == 'title_machine':
-        sheet = title_machine
-    values = sheet.get_all_values()
     list_product = []
-    for item in values[1:]:
-        list_product.append(item[1])
-    return list_product
+    if data == 'job':
+        values = units.get_all_values()
+        for item in values[1:]:
+            list_product.append(item[1])
+    elif data == 'district':
+        values = units.get_all_values()
+        for item in values[1:]:
+            list_product.append(item[0])
+    elif data == 'action':
+        values = machines.get_all_values()
+        for item in values[1:]:
+            list_product.append(item[0])
+    elif data == 'title_machine':
+        values = machines.get_all_values()
+        for item in values[1:]:
+            list_product.append(item[1])
+
+    return list(set(list_product))

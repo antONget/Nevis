@@ -146,6 +146,16 @@ def keyboard_select_report_complete(list_report: list, callback_report: str) -> 
     return kb_builder.as_markup()
 
 
+def keyboard_operation() -> InlineKeyboardMarkup:
+    """
+    Клавиатура выбора описания операции
+    """
+    logging.info("keyboard_operation")
+    button_1 = InlineKeyboardButton(text='Наладка оборудования', callback_data=f'operation_Наладка оборудования')
+    button_2 = InlineKeyboardButton(text='Обработка заготовки', callback_data=f'operation_Обработка заготовки')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]],)
+    return keyboard
+
 def keyboard_is_all_installed() -> InlineKeyboardMarkup:
     logging.info("keyboard_is_all_installed")
     button_1 = InlineKeyboardButton(text='Да', callback_data=f'is_all_installed_yes')

@@ -31,6 +31,7 @@ class Report(Base):
     photo_id: Mapped[str] = mapped_column(String(200))
     number_order: Mapped[str] = mapped_column(String(20))
     part_designation: Mapped[str] = mapped_column(String(200))
+    number_MSK: Mapped[str] = mapped_column(String(200))
     part_title: Mapped[str] = mapped_column(String(200))
     data_create: Mapped[str] = mapped_column(String(200))
     title_action: Mapped[str] = mapped_column(String(200), default='none')

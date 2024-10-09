@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InputMedi
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from services.googlesheets import append_row
+from services.googlesheets import append_report
 from config_data.config import Config, load_config
 import database.requests as rq
 import keyboards.keyboard_report as kb
@@ -60,6 +60,8 @@ async def report_text(report_id, report_data: list) -> str:
             text += f'<b>Номер заказа:</b> {report_info.number_order}\n'
         if data == 'part_designation':
             text += f'<b>Обозначение детали:</b> {report_info.part_designation}\n'
+        if data == 'number_MSK':
+            text += f'<b>Номер детали по MSK:</b> {report_info.number_MSK}\n'
         if data == 'part_title':
             text += f'<b>Наименование детали:</b> {report_info.part_title}\n'
         if data == 'title_action':
@@ -110,6 +112,7 @@ async def check_report_change(message: Message, state: FSMContext, bot: Bot) -> 
     text_report = await report_text(report_id=report_id,
                                     report_data=['number_order',
                                                  'part_designation',
+                                                 'number_MSK',
                                                  'title_action',
                                                  'part_title',
                                                  'description_action',
@@ -683,22 +686,25 @@ async def confirm_report(message: Message, state: FSMContext, bot: Bot):
     report_id = data['report_id']
     info_order = await rq.get_report(report_id=report_id)
     list_order = [info_order.number_order,
-                  info_order.part_designation,
-                  info_order.title_action,
-                  info_order.part_title,
+                  info_order.number_MSK,
                   info_order.description_action,
+                  info_order.title_action,
                   info_order.title_machine,
+                  info_order.part_title,
+                  info_order.part_designation,
                   info_order.machine_time,
+                  info_order.average_time,
                   info_order.count_part,
                   info_order.is_all_installed,
                   info_order.is_defect,
                   info_order.count_defect,
                   info_order.reason_defect,
-                  info_order.note_report,
+                  info_order.count_machine,
                   info_order.data_create,
-                  info_order.data_complete]
+                  info_order.data_complete,
+                  info_order.note_report]
     # text = "Админу отправляем отчет?"
-    await append_row(data=list_order)
+    await append_report(data=list_order)
     await message.answer(text='Отчет отправлен в гугл таблицу',
                          reply_markup=kb.keyboard_report_start())
     await rq.set_report(report_id=report_id,

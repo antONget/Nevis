@@ -7,7 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from config_data.config import Config, load_config
 import database.requests as rq
 import keyboards.keyboard_user as kb
-from services.googlesheets import get_list_all_rows
+from services.googlesheets import get_list_all_rows, append_user
 
 
 import logging
@@ -35,7 +35,7 @@ async def process_start_command(message: Message, state: FSMContext, bot: Bot) -
     await state.set_state(state=None)
     user = await rq.get_user_tg_id(tg_id=message.chat.id)
     if not user:
-        if message.from_user.username == None:
+        if not message.from_user.username:
             username = 'None'
         else:
             username = message.from_user.username
@@ -296,3 +296,5 @@ async def registration_finish(callback: CallbackQuery, bot: Bot):
                                    reply_markup=kb.keyboard_moderation(tg_user=callback.message.chat.id))
         except:
             pass
+
+    await append_user(data=[user_info.tg_id, user_info.fullname, user_info.job, user_info.district])
