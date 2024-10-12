@@ -226,16 +226,18 @@ async def select_position(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
 
 @router.callback_query(F.data == 'cancel_user_info')
-async def cancel_action(callback: CallbackQuery, bot: Bot):
+async def cancel_action(callback: CallbackQuery, bot: Bot, state: FSMContext):
     """
     Отмена
     :param callback:
     :param bot:
+    :param state:
     :return:
     """
     logging.info(f'cancel_action {callback.message.chat.id}')
     await bot.delete_message(chat_id=callback.message.chat.id,
                              message_id=callback.message.message_id)
+    await process_start_command(message=callback.message, state=state, bot=bot)
     await callback.answer()
 
 

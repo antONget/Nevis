@@ -43,6 +43,11 @@ async def moderation_user(callback: CallbackQuery, bot: Bot):
         #                          message_id=callback.message.message_id)
         await callback.message.edit_text(text='Пользователь успешно авторизован в боте',
                                          reply_markup=None)
+    else:
+        await bot.send_message(chat_id=callback.data.split('_')[2],
+                               text=f'Вы не прошли модерацию')
+        await callback.message.edit_text(text='Пользователь отклонен',
+                                         reply_markup=None)
     await callback.answer()
 
 

@@ -128,7 +128,7 @@ def keyboard_select_report(list_report: list, callback_report: str) -> InlineKey
         buttons.append(InlineKeyboardButton(
             text=text,
             callback_data=button))
-    kb_builder.row(*buttons, width=1)
+    kb_builder.row(*buttons, width=2)
     return kb_builder.as_markup()
 
 

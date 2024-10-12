@@ -1,4 +1,5 @@
 import asyncio
+import re
 import time
 
 from aiogram import Router, F, Bot
@@ -14,7 +15,7 @@ from datetime import datetime
 import cv2
 import logging
 import os
-
+import re
 router = Router()
 config: Config = load_config()
 
@@ -36,6 +37,11 @@ class Report(StatesGroup):
 
 
 async def user_text(tg_id: int):
+    """
+    Формирование информации об исполнителе
+    :param tg_id:
+    :return:
+    """
     user = await rq.get_user_tg_id(tg_id=tg_id)
     text = f'<b>ID:</b> {user.tg_id}\n' \
            f'<b>ФИО:</b> {user.fullname}\n' \
@@ -45,6 +51,12 @@ async def user_text(tg_id: int):
 
 
 async def report_text(report_id, report_data: list):
+    """
+    Формирование информации об отчете
+    :param report_id:
+    :param report_data:
+    :return:
+    """
     report_info = await rq.get_report(report_id=report_id)
     text = ''
     for data in report_data:
@@ -97,7 +109,7 @@ async def process_create_part(message: Message, state: FSMContext) -> None:
 
     :return:
     """
-    logging.info(f"process_start_command {message.chat.id}")
+    logging.info(f"process_create_part {message.chat.id}")
     text_user = await user_text(tg_id=message.chat.id)
     await message.answer(text=f'{text_user}'
                               f'Для начала отчета отправьте фотографию чертежа детали.'
@@ -114,7 +126,7 @@ async def process_get_photo(message: Message, state: FSMContext) -> None:
     :param state:
     :return:
     """
-    logging.info(f"process_start_command {message.chat.id}")
+    logging.info(f"process_get_photo {message.chat.id}")
     photo_id = message.photo[-1].file_id
     await state.update_data(photo_id=photo_id)
     text_user = await user_text(tg_id=message.chat.id)
@@ -132,7 +144,7 @@ async def process_get_qr(message: Message, state: FSMContext) -> None:
     :param state:
     :return:
     """
-    logging.info(f"process_start_command {message.chat.id}")
+    logging.info(f"process_get_qr {message.chat.id}")
     qr_id = message.photo[-1].file_id
     file_path = f"data/{qr_id}.jpg"
     await message.bot.download(
@@ -179,12 +191,21 @@ async def confirm_qr(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :return: 
     """
     logging.info(f"confirm_qr {callback.message.chat.id}")
+    data = await state.get_data()
+    text_user = await user_text(tg_id=callback.message.chat.id)
+    await callback.message.edit_text(text=f'{text_user}'
+                                          f'<b>Номер заказа:</b> {data["number_order"]}\n'
+                                          f'<b>Наименование детали:</b> {data["part_title"]}\n'
+                                          f'<b>Обозначение детали:</b> {data["part_designation"]}\n\n'
+                                          f'Укажите номер операции по МСК')
+    await callback.answer()
+    await state.set_state(Report.number_MSK)
     # await bot.delete_message(chat_id=callback.message.chat.id,
     #                          message_id=callback.message.message_id)
-    list_title_machine = await get_list_all_rows(data='title_machine')
-    await callback.message.answer(text=f'Выберите наименование станка:',
-                                  reply_markup=kb.keyboard_select_report(list_report=list_title_machine,
-                                                                         callback_report='tmachine'))
+    # list_title_machine = await get_list_all_rows(data='title_machine')
+    # await callback.message.edit_text(text=f'Выберите наименование станка:',
+    #                                  reply_markup=kb.keyboard_select_report(list_report=list_title_machine,
+    #                                                                         callback_report='tmachine'))
     # data = await state.get_data()
     # data_dict = {"photo_id": data['photo_id'],
     #              "number_order": data["number_order"],
@@ -365,12 +386,18 @@ async def process_get_part_designation(message: Message, state: FSMContext) -> N
     #                           ' меню "Завершить отчет"',
     #                      reply_markup=kb.keyboard_report_start())
     # await state.set_state(state=None)
-    await message.answer(text=f'Укажите номер операции по МСК')
+    data = await state.get_data()
+    text_user = await user_text(tg_id=message.chat.id)
+    await message.answer(text=f'{text_user}'
+                              f'<b>Номер заказа:</b> {data["number_order"]}\n'
+                              f'<b>Наименование детали:</b> {data["part_title"]}\n'
+                              f'<b>Обозначение детали:</b> {message.text}\n\n'
+                              f'Укажите номер операции по МСК')
     await state.set_state(Report.number_MSK)
 
 
 @router.message(F.text, StateFilter(Report.number_MSK))
-async def process_get_number_MSK(message: Message, state: FSMContext) -> None:
+async def process_get_number_msk(message: Message, state: FSMContext) -> None:
     """
     Получаем номер детели по MSK
     :param message:
@@ -380,7 +407,14 @@ async def process_get_number_MSK(message: Message, state: FSMContext) -> None:
     logging.info(f"process_get_number_MSK {message.chat.id}")
     await state.update_data(number_MSK=message.text)
     list_title_machine = await get_list_all_rows(data='title_machine')
-    await message.answer(text=f'Выберите наименование станка:',
+    data = await state.get_data()
+    text_user = await user_text(tg_id=message.chat.id)
+    await message.answer(text=f'{text_user}'
+                              f'<b>Номер заказа:</b> {data["number_order"]}\n'
+                              f'<b>Наименование детали:</b> {data["part_title"]}\n'
+                              f'<b>Обозначение детали:</b> {data["part_designation"]}\n'
+                              f'<b>Номер операции по МСК:</b> {message.text}\n\n'
+                              f'Выберите наименование станка из списка ниже:',
                          reply_markup=kb.keyboard_select_report(list_report=list_title_machine,
                                                                 callback_report='tmachine'))
 
@@ -400,7 +434,15 @@ async def process_select_description_operation(callback: CallbackQuery, state: F
     title_machine = callback.data.split('_')[-1]
     await state.update_data(title_machine=title_machine)
     list_title_action = await get_list_all_rows(data='action')
-    await callback.message.answer(text=f'Выберите название операции:',
+    data = await state.get_data()
+    text_user = await user_text(tg_id=callback.message.chat.id)
+    await callback.message.edit_text(text=f'{text_user}'
+                                          f'<b>Номер заказа:</b> {data["number_order"]}\n'
+                                          f'<b>Наименование детали:</b> {data["part_title"]}\n'
+                                          f'<b>Обозначение детали:</b> {data["part_designation"]}\n'
+                                          f'<b>Номер операции по МСК:</b> {data["number_MSK"]}\n'
+                                          f'<b>Наименование станка:</b> {title_machine}\n\n'
+                                          f'Выберите название операции:',
                                      reply_markup=kb.keyboard_select_report(list_report=list_title_action,
                                                                             callback_report='action'))
     await callback.answer()
@@ -423,7 +465,7 @@ async def process_select_title_action(callback: CallbackQuery, state: FSMContext
                  "part_designation": data["part_designation"],
                  "number_MSK": data["number_MSK"],
                  "part_title": data["part_title"],
-                 "data_create": datetime.today().strftime('%H/%M/%S/%d/%m/%Y'),
+                 "data_create": str(datetime.today().strftime('%H:%M:%S %d-%m-%Y')),
                  "title_machine": data["title_machine"],
                  "title_action": title_action,
                  "status": rq.ReportStatus.create}
@@ -442,7 +484,7 @@ async def process_select_title_action(callback: CallbackQuery, state: FSMContext
     await callback.message.edit_text(text=f'{text_user}{text_report}'
                                           f'Отчет на изготовление детали успешно открыт.',
                                      reply_markup=None)
-    await callback.message.answer(text=f'для завершения выберите пункт'
+    await callback.message.answer(text=f'Для завершения выберите пункт'
                                        f' меню "Завершить отчет" в меню ниже. '
                                        f'При отсутствии меню нажмите кнопку с 4-мя кружками',
                                   reply_markup=kb.keyboard_report_start())
@@ -549,7 +591,7 @@ async def process_select_report(callback: CallbackQuery, state: FSMContext):
     report_id = int(callback.data.split('_')[-1])
     # list_title_action = await get_list_all_rows(data='action')
     await state.update_data(report_id=report_id)
-    data_complete = datetime.today().strftime('%H/%M/%S/%d/%m/%Y')
+    data_complete = datetime.today().strftime('%H:%M:%S %d-%m-%Y')
     await rq.set_report(report_id=report_id,
                         data={"data_complete": data_complete})
 
@@ -692,6 +734,7 @@ async def process_select_description_operation(callback: CallbackQuery, state: F
     :param state:
     :return:
     """
+    logging.info(f"process_select_description_operation {callback.message.chat.id}")
     # list_title_machine = await get_list_all_rows(data='title_machine')
     data = await state.get_data()
     report_id = data['report_id']
@@ -771,11 +814,11 @@ async def process_get_count_part(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     report_id = data['report_id']
     report_info = await rq.get_report(report_id=report_id)
-    date_format = '%H/%M/%S/%d/%m/%Y'
+    date_format = '%H:%M:%S %d-%m-%Y'
     average_time = (datetime.strptime(report_info.data_complete,
                                      date_format) - datetime.strptime(report_info.data_create,
                                                                       date_format))
-    print(average_time.seconds)
+
     await rq.set_report(report_id=report_id,
                         data={"average_time": round(average_time.seconds/60/int(message.text), 2)})
 
@@ -1018,10 +1061,11 @@ async def count_machine(callback: CallbackQuery, state: FSMContext):
                                                  'is_defect',
                                                  'count_defect',
                                                  'reason_defect',
+                                                 'count_machine',
                                                  'data_create',
                                                  'data_complete'])
     await callback.message.edit_text(text=f'{text_user}{text_report}'
-                                          f'Укажите машинное время')
+                                          f'Укажите машинное время в минутах')
     await state.set_state(Report.machine_time)
     await callback.answer()
 
@@ -1035,9 +1079,12 @@ async def get_time_machine(message: Message, state: FSMContext):
     :return:
     """
     logging.info(f'get_time_machine {message.chat.id}')
-    if not message.text.isdigit() or int(message.text) <= 0:
-        await message.answer(text='Время должно быть целым положительным числом')
-        return
+    re_int = re.compile(r"(^[1-9]+\d*$|^0$)")
+    re_float = re.compile(r"(^\d+\.\d+$|^\.\d+$)")
+    if not message.text.isdigit():
+        if not re_int.match(message.text) and not re_float.match(message.text):
+            await message.answer(text='Время должно быть числом')
+            return
     time_machine = message.text
     data = await state.get_data()
     report_id = data['report_id']
@@ -1058,7 +1105,8 @@ async def get_time_machine(message: Message, state: FSMContext):
                                                  'is_defect',
                                                  'count_defect',
                                                  'reason_defect',
-                                                 'time_machine',
+                                                 'count_machine',
+                                                 'machine_time',
                                                  'data_create',
                                                  'data_complete'])
 
@@ -1153,8 +1201,8 @@ async def get_note_report(message: Message, state: FSMContext, bot: Bot):
     :return:
     """
     logging.info(f'get_note_report {message.chat.id}')
-    # await bot.delete_message(chat_id=message.chat.id,
-    #                          message_id=message.message_id-1)
+    await message.answer(text='Проверка отчета',
+                         reply_markup=kb.keyboard_confirm_report())
     data = await state.get_data()
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
@@ -1179,6 +1227,7 @@ async def get_note_report(message: Message, state: FSMContext, bot: Bot):
                                                  'count_defect',
                                                  'reason_defect',
                                                  'note_report',
+                                                 'machine_time',
                                                  'data_create',
                                                  'data_complete'])
     check_message = await message.answer_photo(photo=report_info.photo_id,
@@ -1220,6 +1269,7 @@ async def check_report(callback: CallbackQuery, state: FSMContext, bot: Bot):
                                                  'count_defect',
                                                  'reason_defect',
                                                  'note_report',
+                                                 'machine_time',
                                                  'data_create',
                                                  'data_complete'])
     check_message = await callback.message.answer_photo(photo=report_info.photo_id,

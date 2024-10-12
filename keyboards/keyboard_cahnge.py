@@ -4,23 +4,28 @@ from database.models import Report
 import logging
 
 keyboard_report_text_button = {}
-#
-#
-# def keyboard_not_recognize() -> InlineKeyboardMarkup:
-#     logging.info("keyboard_not_recognize")
-#     button_1 = InlineKeyboardButton(text='Ввести вручную', callback_data=f'qr_hand_input')
-#     button_2 = InlineKeyboardButton(text='Распознать QR', callback_data=f'qr_recognize')
-#     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]],)
-#     return keyboard
-#
-#
-# def keyboard_confirm_recognize() -> InlineKeyboardMarkup:
-#     logging.info("keyboard_not_recognize")
-#     button_3 = InlineKeyboardButton(text='Подтвердить данные', callback_data=f'qr_confirm')
-#     button_1 = InlineKeyboardButton(text='Ввести вручную', callback_data=f'qr_hand_input')
-#     button_2 = InlineKeyboardButton(text='Распознать QR', callback_data=f'qr_recognize')
-#     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_3], [button_1], [button_2]],)
-#     return keyboard
+
+
+def keyboard_operation() -> InlineKeyboardMarkup:
+    """
+    Клавиатура выбора описания операции
+    """
+    logging.info("keyboard_operation")
+    button_1 = InlineKeyboardButton(text='Наладка оборудования', callback_data=f'change_operation_Наладка оборудования')
+    button_2 = InlineKeyboardButton(text='Обработка заготовки', callback_data=f'change_operation_Обработка заготовки')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]],)
+    return keyboard
+
+
+def keyboard_report_start() -> ReplyKeyboardMarkup:
+    logging.info("keyboard_report_start")
+    button_1 = KeyboardButton(text=f'Мой профиль')
+    button_2 = KeyboardButton(text=f'Создать отчет')
+    button_3 = KeyboardButton(text=f'Завершить отчет')
+    # button_4 = KeyboardButton(text='🔄 Заполнить отчет заново')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3]],
+                                   resize_keyboard=True)
+    return keyboard
 #
 #
 # def keyboard_report_start() -> ReplyKeyboardMarkup:

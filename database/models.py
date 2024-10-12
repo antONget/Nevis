@@ -46,7 +46,7 @@ class Report(Base):
     reason_defect: Mapped[str] = mapped_column(String(200), default='none')
     count_machine: Mapped[str] = mapped_column(String(200), default='none')
     data_complete: Mapped[str] = mapped_column(String(200), default='none')
-    note_report:  Mapped[str] = mapped_column(String(200), default='none')
+    note_report:  Mapped[str] = mapped_column(String(200), default='Отсутствует')
     status: Mapped[str] = mapped_column(String(200), default='start')
 
 
