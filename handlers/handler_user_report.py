@@ -313,10 +313,11 @@ async def process_again_input_2(message: Message, state: FSMContext, bot: Bot) -
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id-1)
     reports = await rq.get_reports_creator_status(creator=message.chat.id, status=rq.ReportStatus.create)
-    if not reports:
+    list_report = [report for report in reports]
+    if not list_report:
         await message.answer(text='У вас нет открытых отчетов. чтобы открыть отчет нажмите "Создать отчет"')
         return
-    list_report = [report for report in reports]
+
     await message.answer(text='Выберите отчет для его завершения',
                          reply_markup=kb.keyboard_select_report_complete(list_report=list_report,
                                                                          callback_report='comletereport'))
@@ -405,6 +406,9 @@ async def process_get_number_msk(message: Message, state: FSMContext) -> None:
     :return:
     """
     logging.info(f"process_get_number_MSK {message.chat.id}")
+    if not message.text.isdigit() or int(message.text) <= 0:
+        await message.answer(text='Номер операции по МСК должно быть целым числом, указанным цифрами')
+        return
     await state.update_data(number_MSK=message.text)
     list_title_machine = await get_list_all_rows(data='title_machine')
     data = await state.get_data()
@@ -506,10 +510,10 @@ async def process_get_complete_part(message: Message, state: FSMContext, bot: Bo
     # await bot.delete_message(chat_id=message.chat.id,
     #                          message_id=message.message_id-1)
     reports = await rq.get_reports_creator_status(creator=message.chat.id, status=rq.ReportStatus.create)
-    if not reports:
+    list_report = [report for report in reports]
+    if not list_report:
         await message.answer(text='У вас нет открытых отчетов. чтобы открыть отчет нажмите "Создать отчет"')
         return
-    list_report = [report for report in reports]
     await message.answer(text='Выберите отчет для его завершения',
                          reply_markup=kb.keyboard_select_report_complete(list_report=list_report,
                                                                          callback_report='comletereport'))
@@ -792,7 +796,7 @@ async def process_select_description_operation(callback: CallbackQuery, state: F
                                                  'data_create',
                                                  'data_complete'])
     await callback.message.edit_text(text=f'{text_user}{text_report}'
-                                          f'Введите количество деталей')
+                                          f'Введите количество деталей, прошедших операцию')
     await callback.answer()
     await state.set_state(Report.count_part)
 
@@ -841,7 +845,7 @@ async def process_get_count_part(message: Message, state: FSMContext) -> None:
                                                  'data_create',
                                                  'data_complete'])
     await message.answer(text=f'{text_user}{text_report}'
-                              f'Все ли детали установлены',
+                              f'Все ли детали из партии прошли операцию',
                          reply_markup=kb.keyboard_is_all_installed())
 
 
@@ -1073,7 +1077,7 @@ async def count_machine(callback: CallbackQuery, state: FSMContext):
 @router.message(StateFilter(Report.machine_time))
 async def get_time_machine(message: Message, state: FSMContext):
     """
-    Получаем машинное время
+    Получаем машинное время и просим добавить примечание
     :param message:
     :param state:
     :return:
@@ -1233,6 +1237,7 @@ async def get_note_report(message: Message, state: FSMContext, bot: Bot):
     check_message = await message.answer_photo(photo=report_info.photo_id,
                                                caption=f'{text_user}{text_report}',
                                                reply_markup=kb.keyboard_change_report(info_report=report_info))
+    await state.set_state(state=None)
     await state.update_data(check_message=check_message.message_id)
 
 
@@ -1276,4 +1281,5 @@ async def check_report(callback: CallbackQuery, state: FSMContext, bot: Bot):
                                                         caption=f'{text_user}{text_report}',
                                                         reply_markup=kb.keyboard_change_report(info_report=report_info))
     await state.update_data(check_message=check_message.message_id)
+    await state.set_state(state=None)
     await callback.answer()
