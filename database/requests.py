@@ -258,3 +258,11 @@ async def set_report(report_id: int, data: dict) -> None:
         elif 'status' in data.keys():
             report.status = data['status']
         await session.commit()
+
+
+async def del_user(tg_id: int) -> None:
+    async with async_session() as session:
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        if user:
+            await session.delete(user)
+            await session.commit()

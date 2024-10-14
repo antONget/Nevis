@@ -1,17 +1,28 @@
 import asyncio
 
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.types import FSInputFile
 from database.requests import get_all_users
 from services.get_exel import list_users_to_exel
 from config_data.config import Config, load_config
-
+from database import requests as rq
+from filter.admin_filter import IsSuperAdmin
 import logging
 
 router = Router()
 config: Config = load_config()
 
+
+@router.message(F.text.startswith('/del_user'))
+async def del_user_in_admin_modetg(message: Message):
+    logging.info(f'del_user_in_admin_mode')
+    if IsSuperAdmin:
+        tg_id = int(message.text.split(' ')[-1])
+        await rq.del_user(tg_id=tg_id)
+        await message.answer(text=f"Пользователь с tg_id = {tg_id} удален из базы данных")
+    else:
+        await message.answer(text='Вам недоступен это функционал')
 
 @router.callback_query()
 async def all_callback(callback: CallbackQuery) -> None:
