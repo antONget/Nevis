@@ -400,7 +400,7 @@ async def process_get_part_designation(message: Message, state: FSMContext) -> N
 @router.message(F.text, StateFilter(Report.number_MSK))
 async def process_get_number_msk(message: Message, state: FSMContext) -> None:
     """
-    Получаем номер детели по MSK
+    +++Получаем номер детели по MSK
     :param message:
     :param state:
     :return:
@@ -410,7 +410,7 @@ async def process_get_number_msk(message: Message, state: FSMContext) -> None:
         await message.answer(text='Номер операции по МСК должно быть целым числом, указанным цифрами')
         return
     await state.update_data(number_MSK=message.text)
-    list_title_machine = await get_list_all_rows(data='title_machine')
+    list_title_action = await get_list_all_rows(data='action')
     data = await state.get_data()
     text_user = await user_text(tg_id=message.chat.id)
     await message.answer(text=f'{text_user}'
@@ -418,41 +418,93 @@ async def process_get_number_msk(message: Message, state: FSMContext) -> None:
                               f'<b>Наименование детали:</b> {data["part_title"]}\n'
                               f'<b>Обозначение детали:</b> {data["part_designation"]}\n'
                               f'<b>Номер операции по МСК:</b> {message.text}\n\n'
-                              f'Выберите наименование станка из списка ниже:',
-                         reply_markup=kb.keyboard_select_report(list_report=list_title_machine,
-                                                                callback_report='tmachine'))
+                              f'Выберите название операции:',
+                         reply_markup=kb.keyboard_select_report(list_report=list_title_action,
+                                                                callback_report='action'))
 
 
-@router.callback_query(F.data.startswith('tmachine'))
-async def process_select_description_operation(callback: CallbackQuery, state: FSMContext, bot: Bot):
+@router.callback_query(F.data.startswith('action'))
+async def process_select_title_action(callback: CallbackQuery, state: FSMContext):
     """
-    Получаем название станка
+    +++Выбрать наименование операции
     :param callback:
     :param state:
-    :param bot:
     :return:
     """
-    logging.info(f"process_select_description_operation {callback.message.chat.id}")
-    # await bot.delete_message(chat_id=callback.message.chat.id,
-    #                          message_id=callback.message.message_id)
-    title_machine = callback.data.split('_')[-1]
-    await state.update_data(title_machine=title_machine)
-    list_title_action = await get_list_all_rows(data='action')
+    logging.info(f'process_select_title_action {callback.message.chat.id}')
+    title_action = callback.data.split('_')[-1]
+    await state.update_data(title_action=title_action)
     data = await state.get_data()
+    list_title_machine = await get_list_all_rows(data='title_machine', tittle_action=data["title_action"])
     text_user = await user_text(tg_id=callback.message.chat.id)
     await callback.message.edit_text(text=f'{text_user}'
                                           f'<b>Номер заказа:</b> {data["number_order"]}\n'
                                           f'<b>Наименование детали:</b> {data["part_title"]}\n'
                                           f'<b>Обозначение детали:</b> {data["part_designation"]}\n'
                                           f'<b>Номер операции по МСК:</b> {data["number_MSK"]}\n'
-                                          f'<b>Наименование станка:</b> {title_machine}\n\n'
-                                          f'Выберите название операции:',
-                                     reply_markup=kb.keyboard_select_report(list_report=list_title_action,
-                                                                            callback_report='action'))
+                                          f'<b>Название операции:</b> {data["title_action"]}\n'
+                                          f'Выберите наименование станка из списка ниже:',
+                                  reply_markup=kb.keyboard_select_report(list_report=list_title_machine,
+                                                                         callback_report='tmachine'))
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith('action'))
+# @router.message(F.text, StateFilter(Report.number_MSK))
+# async def process_get_number_msk(message: Message, state: FSMContext) -> None:
+#     """
+#     !!!Получаем номер детели по MSK
+#     :param message:
+#     :param state:
+#     :return:
+#     """
+#     logging.info(f"process_get_number_MSK {message.chat.id}")
+#     if not message.text.isdigit() or int(message.text) <= 0:
+#         await message.answer(text='Номер операции по МСК должно быть целым числом, указанным цифрами')
+#         return
+#     await state.update_data(number_MSK=message.text)
+#     list_title_machine = await get_list_all_rows(data='title_machine')
+#     data = await state.get_data()
+#     text_user = await user_text(tg_id=message.chat.id)
+#     await message.answer(text=f'{text_user}'
+#                               f'<b>Номер заказа:</b> {data["number_order"]}\n'
+#                               f'<b>Наименование детали:</b> {data["part_title"]}\n'
+#                               f'<b>Обозначение детали:</b> {data["part_designation"]}\n'
+#                               f'<b>Номер операции по МСК:</b> {message.text}\n\n'
+#                               f'Выберите наименование станка из списка ниже:',
+#                          reply_markup=kb.keyboard_select_report(list_report=list_title_machine,
+#                                                                 callback_report='tmachine'))
+
+
+# @router.callback_query(F.data.startswith('tmachine'))
+# async def process_select_description_operation(callback: CallbackQuery, state: FSMContext, bot: Bot):
+#     """
+#     !!!Получаем название станка
+#     :param callback:
+#     :param state:
+#     :param bot:
+#     :return:
+#     """
+#     logging.info(f"process_select_description_operation {callback.message.chat.id}")
+#     # await bot.delete_message(chat_id=callback.message.chat.id,
+#     #                          message_id=callback.message.message_id)
+#     title_machine = callback.data.split('_')[-1]
+#     await state.update_data(title_machine=title_machine)
+#     list_title_action = await get_list_all_rows(data='action')
+#     data = await state.get_data()
+#     text_user = await user_text(tg_id=callback.message.chat.id)
+#     await callback.message.edit_text(text=f'{text_user}'
+#                                           f'<b>Номер заказа:</b> {data["number_order"]}\n'
+#                                           f'<b>Наименование детали:</b> {data["part_title"]}\n'
+#                                           f'<b>Обозначение детали:</b> {data["part_designation"]}\n'
+#                                           f'<b>Номер операции по МСК:</b> {data["number_MSK"]}\n'
+#                                           f'<b>Наименование станка:</b> {title_machine}\n\n'
+#                                           f'Выберите название операции:',
+#                                      reply_markup=kb.keyboard_select_report(list_report=list_title_action,
+#                                                                             callback_report='action'))
+#     await callback.answer()
+
+
+@router.callback_query(F.data.startswith('tmachine'))
 async def process_select_title_action(callback: CallbackQuery, state: FSMContext):
     """
     Выбрать наименование операции
@@ -461,7 +513,7 @@ async def process_select_title_action(callback: CallbackQuery, state: FSMContext
     :return:
     """
     logging.info(f'process_select_title_action {callback.message.chat.id}')
-    title_action = callback.data.split('_')[-1]
+    title_machine = callback.data.split('_')[-1]
     data = await state.get_data()
     data_dict = {"photo_id": data['photo_id'],
                  "creator": callback.message.chat.id,
@@ -470,8 +522,8 @@ async def process_select_title_action(callback: CallbackQuery, state: FSMContext
                  "number_MSK": data["number_MSK"],
                  "part_title": data["part_title"],
                  "data_create": str(datetime.today().strftime('%H:%M:%S %d-%m-%Y')),
-                 "title_machine": data["title_machine"],
-                 "title_action": title_action,
+                 "title_machine": title_machine,
+                 "title_action": data["title_action"],
                  "status": rq.ReportStatus.create}
     report_id = await rq.add_report(data=data_dict)
     time.sleep(0.1)

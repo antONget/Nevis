@@ -31,7 +31,7 @@ async def append_user(data: list) -> None:
     users.append_row(data)
 
 
-async def get_list_all_rows(data: str) -> list:
+async def get_list_all_rows(data: str, tittle_action: str = None) -> list:
     logging.info(f'get_list_all_rows')
     list_product = []
     if data == 'job':
@@ -49,6 +49,7 @@ async def get_list_all_rows(data: str) -> list:
     elif data == 'title_machine':
         values = machines.get_all_values()
         for item in values[1:]:
-            list_product.append(item[1])
+            if item[0] == tittle_action:
+                list_product.append(item[1])
 
     return list(set(list_product))
