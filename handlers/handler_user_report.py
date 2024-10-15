@@ -65,7 +65,7 @@ async def report_text(report_id, report_data: list):
         if data == 'part_designation':
             text += f'<b>Обозначение детали:</b> {report_info.part_designation}\n'
         if data == 'number_MSK':
-            text += f'<b>Номер детали по MSK:</b> {report_info.number_MSK}\n'
+            text += f'<b>Номер детали по МСК:</b> {report_info.number_MSK}\n'
         if data == 'part_title':
             text += f'<b>Наименование детали:</b> {report_info.part_title}\n'
         if data == 'title_action':
