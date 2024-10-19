@@ -16,6 +16,7 @@ import cv2
 import logging
 import os
 import re
+import random
 router = Router()
 config: Config = load_config()
 
@@ -129,7 +130,7 @@ async def process_get_photo(message: Message, state: FSMContext) -> None:
     :return:
     """
     logging.info(f"process_get_photo {message.chat.id}")
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(random.random())
     data = await state.get_data()
     if data['photo_1'] == 0:
         await state.update_data(photo_1=1)
@@ -155,7 +156,7 @@ async def process_get_qr(message: Message, state: FSMContext) -> None:
     :return:
     """
     logging.info(f"process_get_qr {message.chat.id}")
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(random.random())
     data = await state.get_data()
     if data['photo_2'] == 0:
         await state.update_data(photo_2=1)
