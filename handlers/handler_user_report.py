@@ -142,8 +142,8 @@ async def process_get_photo(message: Message, state: FSMContext) -> None:
         await state.set_state(Report.QR)
 
         await state.update_data(photo_2=0)
-    else:
-        await message.answer(text='Ожидаем только одно фото, в отчет взяли первое')
+    # else:
+    #     await message.answer(text='Ожидаем только одно фото, в отчет взяли первое')
 
 
 @router.message(F.photo, StateFilter(Report.QR))
@@ -195,8 +195,8 @@ async def process_get_qr(message: Message, state: FSMContext) -> None:
             logging.error(f'Произошла ошибка: {e}')
         await state.set_state(state=None)
 
-    else:
-        await message.answer(text='Ожидаем только один QR')
+    # else:
+    #     await message.answer(text='Ожидаем только один QR')
 
 
 @router.callback_query(F.data == 'qr_confirm')
@@ -313,6 +313,8 @@ async def process_again_input(message: Message, state: FSMContext, bot: Bot) -> 
                               f'Для начала отчета отправьте фотографию чертежа детали.'
                               f' Для добавления фотографии нажмите на 📎',
                          reply_markup=kb.keyboard_again_start())
+    await state.update_data(photo_1=0)
+    await state.update_data(photo_2=0)
     await state.set_state(Report.photo)
 
 
