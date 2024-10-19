@@ -431,6 +431,7 @@ async def process_get_number_msk(message: Message, state: FSMContext) -> None:
         return
     await state.update_data(number_MSK=message.text)
     list_title_action = await get_list_all_rows(data='action')
+    list_title_action.sort()
     data = await state.get_data()
     text_user = await user_text(tg_id=message.chat.id)
     await message.answer(text=f'{text_user}'
@@ -456,6 +457,7 @@ async def process_select_title_action(callback: CallbackQuery, state: FSMContext
     await state.update_data(title_action=title_action)
     data = await state.get_data()
     list_title_machine = await get_list_all_rows(data='title_machine', tittle_action=data["title_action"])
+    list_title_machine.sort()
     text_user = await user_text(tg_id=callback.message.chat.id)
     await callback.message.edit_text(text=f'{text_user}'
                                           f'<b>Номер заказа:</b> {data["number_order"]}\n'
