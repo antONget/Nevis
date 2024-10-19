@@ -257,6 +257,8 @@ async def set_report(report_id: int, data: dict) -> None:
             report.average_time = data['average_time']
         elif 'status' in data.keys():
             report.status = data['status']
+        elif 'note_report' in data.keys():
+            report.note_report = data['note_report']
         await session.commit()
 
 

@@ -110,11 +110,13 @@ async def process_create_part(message: Message, state: FSMContext) -> None:
     :return:
     """
     logging.info(f"process_create_part {message.chat.id}")
+
     text_user = await user_text(tg_id=message.chat.id)
     await message.answer(text=f'{text_user}'
                               f'Для начала отчета отправьте фотографию чертежа детали.'
                               f' Для добавления фотографии нажмите на 📎',
                          reply_markup=kb.keyboard_again_start())
+    await state.update_data(photo_1=0)
     await state.set_state(Report.photo)
 
 
@@ -127,12 +129,20 @@ async def process_get_photo(message: Message, state: FSMContext) -> None:
     :return:
     """
     logging.info(f"process_get_photo {message.chat.id}")
-    photo_id = message.photo[-1].file_id
-    await state.update_data(photo_id=photo_id)
-    text_user = await user_text(tg_id=message.chat.id)
-    await message.answer(text=f'{text_user}'
-                              f'Сфотографируйте QR для добавления данных в заказ. Для добавления QR нажмите на 📎')
-    await state.set_state(Report.QR)
+    await asyncio.sleep(0.1)
+    data = await state.get_data()
+    if data['photo_1'] == 0:
+        await state.update_data(photo_1=1)
+        photo_id = message.photo[-1].file_id
+        await state.update_data(photo_id=photo_id)
+        text_user = await user_text(tg_id=message.chat.id)
+        await message.answer(text=f'{text_user}'
+                                  f'Сфотографируйте QR для добавления данных в заказ. Для добавления QR нажмите на 📎')
+        await state.set_state(Report.QR)
+
+        await state.update_data(photo_2=0)
+    else:
+        await message.answer(text='Ожидаем только одно фото, в отчет взяли первое')
 
 
 @router.message(F.photo, StateFilter(Report.QR))
@@ -145,40 +155,47 @@ async def process_get_qr(message: Message, state: FSMContext) -> None:
     :return:
     """
     logging.info(f"process_get_qr {message.chat.id}")
-    qr_id = message.photo[-1].file_id
-    file_path = f"data/{qr_id}.jpg"
-    await message.bot.download(
-        qr_id,
-        destination=file_path
-    )
-    img_qrcode = cv2.imread(file_path)
-    detector = cv2.QRCodeDetector()
-    data, bbox, clear_qrcode = detector.detectAndDecode(img_qrcode)
-    if data:
-        data_qr = ''
-        list_qr = []
-        for _ in data.split("\n"):
-            data_qr += f'<b>{_.split(":")[0]}:</b> {_.split(":")[1]}\n'
-            list_qr.append(_.split(":")[1])
-        await message.answer(text=f'QR распознан\n\n'
-                                  f'{data_qr}',
-                             reply_markup=kb.keyboard_confirm_recognize())
-        await state.update_data(number_order=list_qr[0])
-        await state.update_data(part_designation=list_qr[1])
-        await state.update_data(part_title=list_qr[2])
+    await asyncio.sleep(0.1)
+    data = await state.get_data()
+    if data['photo_2'] == 0:
+        await state.update_data(photo_2=1)
+        qr_id = message.photo[-1].file_id
+        file_path = f"data/{qr_id}.jpg"
+        await message.bot.download(
+            qr_id,
+            destination=file_path
+        )
+        img_qrcode = cv2.imread(file_path)
+        detector = cv2.QRCodeDetector()
+        data, bbox, clear_qrcode = detector.detectAndDecode(img_qrcode)
+        if data:
+            data_qr = ''
+            list_qr = []
+            for _ in data.split("\n"):
+                data_qr += f'<b>{_.split(":")[0]}:</b> {_.split(":")[1]}\n'
+                list_qr.append(_.split(":")[1])
+            await message.answer(text=f'QR распознан\n\n'
+                                      f'{data_qr}',
+                                 reply_markup=kb.keyboard_confirm_recognize())
+            await state.update_data(number_order=list_qr[0])
+            await state.update_data(part_designation=list_qr[1])
+            await state.update_data(part_title=list_qr[2])
+        else:
+            await message.answer(text='QR не распознан. Повторите попытку',
+                                 reply_markup=kb.keyboard_not_recognize())
+        try:
+            os.remove(file_path)
+            logging.info(f'Файл {file_path} успешно удалён.')
+        except FileNotFoundError:
+            logging.error(f'Файл {file_path} не найден.')
+        except PermissionError:
+            logging.error(f'У вас нет разрешения на удаление файла {file_path}.')
+        except Exception as e:
+            logging.error(f'Произошла ошибка: {e}')
+        await state.set_state(state=None)
+
     else:
-        await message.answer(text='QR не распознан. Повторите попытку',
-                             reply_markup=kb.keyboard_not_recognize())
-    try:
-        os.remove(file_path)
-        logging.info(f'Файл {file_path} успешно удалён.')
-    except FileNotFoundError:
-        logging.error(f'Файл {file_path} не найден.')
-    except PermissionError:
-        logging.error(f'У вас нет разрешения на удаление файла {file_path}.')
-    except Exception as e:
-        logging.error(f'Произошла ошибка: {e}')
-    await state.set_state(state=None)
+        await message.answer(text='Ожидаем только один QR')
 
 
 @router.callback_query(F.data == 'qr_confirm')
@@ -1121,7 +1138,8 @@ async def count_machine(callback: CallbackQuery, state: FSMContext):
                                                  'data_create',
                                                  'data_complete'])
     await callback.message.edit_text(text=f'{text_user}{text_report}'
-                                          f'Укажите машинное время в минутах')
+                                          f'Укажите машинное время обработки одной заготовки в минутах'
+                                          f' (например: 1.83)')
     await state.set_state(Report.machine_time)
     await callback.answer()
 

@@ -28,6 +28,7 @@ class Change(StatesGroup):
     count_defect = State()
     reason_defect = State()
     machine_time = State()
+    note_report = State()
 
 
 async def user_text(tg_id: int) -> str:
@@ -665,6 +666,42 @@ async def process_get_machine_time(message: Message, state: FSMContext, bot: Bot
     report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"machine_time": message.text})
+    await state.set_state(state=None)
+    await check_report_change(message=message, state=state, bot=bot)
+
+
+@router.callback_query(F.data == 'change_report-note_report')
+async def select_change_note_report(callback: CallbackQuery, state: FSMContext) -> None:
+    """
+    Изменение комментария
+    :param callback:
+    :param state:
+    :return:
+    """
+    logging.info(f"select_change_note_report {callback.message.chat.id}")
+    await callback.message.answer(text=f'Пришлите комментарий к отчету')
+    await state.set_state(Change.note_report)
+    await callback.answer()
+
+
+@router.message(F.text, StateFilter(Change.note_report))
+async def process_get_note_report(message: Message, state: FSMContext, bot: Bot) -> None:
+    """
+    Получаем комментарий к отчету
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f"process_get_note_report {message.chat.id}")
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id)
+    await bot.delete_message(chat_id=message.chat.id,
+                             message_id=message.message_id-1)
+    data = await state.get_data()
+    report_id = data['report_id']
+    await rq.set_report(report_id=report_id,
+                        data={"note_report": message.text})
     await state.set_state(state=None)
     await check_report_change(message=message, state=state, bot=bot)
 
