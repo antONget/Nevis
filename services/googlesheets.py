@@ -30,7 +30,6 @@ async def append_user(data: list) -> None:
     logging.info(f'append_user')
     values = users.get_all_values()
     for i, item in enumerate(values[1:]):
-        print(item)
         if item[0] == str(data[0]):
             users.update_cell(i + 2, 2, data[1])
             users.update_cell(i + 2, 3, data[2])
