@@ -223,14 +223,16 @@ def keyboard_change_report(info_report: Report) -> InlineKeyboardMarkup:
                                      callback_data=f'change_report-data_create')
     button_15 = InlineKeyboardButton(text=f'Окончание работы: {info_report.data_complete}',
                                      callback_data=f'change_report-data_complete')
+    button_16 = InlineKeyboardButton(text=f'Комментарий: {info_report.note_report}',
+                                     callback_data=f'change_report-note_report')
     if info_report.is_defect == 'Да':
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_5],
                                                          [button_7], [button_8], [button_9],
-                                                         [button_10], [button_11], [button_12], [button_13]],)
+                                                         [button_10], [button_11], [button_12], [button_13], [button_16]],)
     else:
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_5],
                                                          [button_7], [button_8], [button_9],
-                                                         [button_12], [button_13]],)
+                                                         [button_12], [button_13], [button_16]],)
     return keyboard
 
 

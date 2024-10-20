@@ -389,12 +389,16 @@ async def process_get_count_part(message: Message, state: FSMContext, bot: Bot) 
     if not message.text.isdigit() or int(message.text) <= 0:
         await message.answer(text='Количество деталей должно быть целым числом, указанным цифрами')
         return
+    data = await state.get_data()
+    report_id = data['report_id']
+    info_report = await rq.get_report(report_id=report_id)
+    if int(message.text) < info_report.count_defect:
+        await message.answer(text='Количество деталей не может меньше количества брака')
+        return
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id)
     await bot.delete_message(chat_id=message.chat.id,
                              message_id=message.message_id-1)
-    data = await state.get_data()
-    report_id = data['report_id']
     await rq.set_report(report_id=report_id,
                         data={"count_part": message.text})
     await state.set_state(state=None)

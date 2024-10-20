@@ -24,11 +24,20 @@ async def append_report(data: list) -> None:
 async def append_user(data: list) -> None:
     """
     Добавление пользователя в гугл таблицу
-    :param data:
+    :param data: ID	ФИО	Должность Участок data=[user_info.tg_id, user_info.fullname, user_info.job, user_info.district]
     :return:
     """
     logging.info(f'append_user')
-    users.append_row(data)
+    values = users.get_all_values()
+    for i, item in enumerate(values[1:]):
+        print(item)
+        if item[0] == str(data[0]):
+            users.update_cell(i + 2, 2, data[1])
+            users.update_cell(i + 2, 3, data[2])
+            users.update_cell(i + 2, 4, data[3])
+            break
+    else:
+        users.append_row(data)
 
 
 async def get_list_all_rows(data: str, tittle_action: str = None) -> list:
