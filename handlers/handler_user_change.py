@@ -728,6 +728,7 @@ async def confirm_report(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     report_id = data['report_id']
     info_order = await rq.get_report(report_id=report_id)
+    info_user = await rq.get_user_tg_id(tg_id=info_order.creator)
     list_order = [info_order.number_order,
                   info_order.number_MSK,
                   info_order.description_action,
@@ -735,6 +736,7 @@ async def confirm_report(message: Message, state: FSMContext, bot: Bot):
                   info_order.title_machine,
                   info_order.part_title,
                   info_order.part_designation,
+                  info_user.fullname,
                   info_order.machine_time,
                   info_order.average_time,
                   info_order.count_part,
@@ -743,8 +745,10 @@ async def confirm_report(message: Message, state: FSMContext, bot: Bot):
                   info_order.count_defect,
                   info_order.reason_defect,
                   info_order.count_machine,
-                  info_order.data_create,
-                  info_order.data_complete,
+                  info_order.data_create.split()[1],
+                  info_order.data_create.split()[0],
+                  info_order.data_complete.split()[1],
+                  info_order.data_complete.split()[0],
                   info_order.note_report]
     # text = "Админу отправляем отчет?"
     await append_report(data=list_order)
